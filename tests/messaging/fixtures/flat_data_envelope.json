@@ -1,0 +1,14 @@
+{
+  "event": "messages.upsert",
+  "timestamp": 1633456795,
+  "data": {
+    "key": {
+      "id": "MSG-FLAT-1",
+      "fromMe": false,
+      "remoteJid": "237670000006@s.whatsapp.net",
+      "cleanedSenderPn": "237670000006"
+    },
+    "message": {"extendedTextMessage": {"text": "Flat envelope text"}},
+    "messageTimestamp": "1633456795"
+  }
+}

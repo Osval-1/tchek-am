@@ -676,12 +676,14 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - **Reply-only:** a reply is allowed only if the recipient has an inbound message within 24 h, or has a `PendingNotification` being delivered right now. Everything else raises `UnsolicitedMessageBlocked`.
 - **Failover:** `WASENDER_ACTIVE_SESSION` = `primary | backup` chooses the API key. Add a management command `switch_channel backup` and document it in the runbook (`docs/runbook.md`): what to do when banned (switch, then post the backup number to partner admins).
 - **Concurrency:** limit WhatsApp sends to 3 concurrent jobs (Procrastinate queue `whatsapp` with a lock).
+- **Retry-safe processing (from the Issue 3 review):** replace the read-then-act status check in `messaging.process_inbound` with an atomic claim: `filter(pk=…, status=RECEIVED).update(status=PROCESSING)`, continuing only if 1 row was updated. Add a `PROCESSING` status, plus a recovery job that resets events stuck in `PROCESSING` for more than 10 minutes. Replace the catch-all `failed` handling with: `RateLimited` → re-enqueue with a delay; other errors → `failed`, retried up to 3 times with backoff.
 
 **Acceptance Criteria**:
 - [ ] Sending to a user with no inbound message in 24 h raises `UnsolicitedMessageBlocked` (tested).
 - [ ] The per-recipient limit defers the 7th message within 30 s.
 - [ ] `RateLimited` re-enqueues with a delay of at least `retry_after`.
 - [ ] Typing is called before text with the computed delay (sleep mocked).
+- [ ] Two concurrent runs of `process_inbound` for the same event send exactly one reply. An event stuck in `PROCESSING` is recovered.
 - [ ] `switch_channel backup` changes the key used by `get_channel()`. `docs/runbook.md` exists.
 
 **Files likely affected**: `src/tchekam/messaging/{safe.py,channel.py,tasks.py,management/commands/switch_channel.py}`, `docs/runbook.md`, `tests/messaging/test_safe.py`

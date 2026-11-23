@@ -11,6 +11,8 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("S3_BUCKET", "b")
     monkeypatch.setenv("S3_ACCESS_KEY", "ak")
     monkeypatch.setenv("S3_SECRET_KEY", "sk")
+    monkeypatch.setenv("WASENDER_WEBHOOK_SECRET", "whsec")
+    monkeypatch.setenv("WASENDER_API_KEY", "wk")
 
 
 @pytest.fixture
@@ -40,7 +42,16 @@ def test_prod_requires_allowed_hosts(monkeypatch):
         importlib.reload(prod)
 
 
-@pytest.mark.parametrize("name", ["S3_SECRET_KEY", "S3_ENDPOINT_URL", "DATABASE_URL"])
+@pytest.mark.parametrize(
+    "name",
+    [
+        "S3_SECRET_KEY",
+        "S3_ENDPOINT_URL",
+        "DATABASE_URL",
+        "WASENDER_WEBHOOK_SECRET",
+        "WASENDER_API_KEY",
+    ],
+)
 def test_prod_requires_infra_settings(monkeypatch, name):
     _set_required_env(monkeypatch)
     monkeypatch.delenv(name)

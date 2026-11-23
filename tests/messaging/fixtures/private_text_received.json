@@ -1,0 +1,17 @@
+{
+  "event": "messages.received",
+  "timestamp": 1633456789,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-PRIV-1",
+        "fromMe": false,
+        "remoteJid": "123456789012345@lid",
+        "cleanedSenderPn": "237670000001"
+      },
+      "messageBody": "Hello bot",
+      "message": {"conversation": "Hello bot"},
+      "messageTimestamp": 1633456789
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "event": "messages-group.received",
+  "timestamp": 1633456791,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-GRP-1",
+        "fromMe": false,
+        "remoteJid": "120363000000000001@g.us",
+        "participant": "987654321098765@lid",
+        "cleanedParticipantPn": "237670000003"
+      },
+      "messageBody": "Anyone know this seller?",
+      "message": {"conversation": "Anyone know this seller?"},
+      "messageTimestamp": 1633456791
+    }
+  }
+}

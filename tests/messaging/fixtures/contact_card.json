@@ -1,0 +1,20 @@
+{
+  "event": "messages.received",
+  "timestamp": 1633456796,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-VCF-1",
+        "fromMe": false,
+        "remoteJid": "237670000007@s.whatsapp.net",
+        "cleanedSenderPn": "237670000007"
+      },
+      "message": {
+        "contactMessage": {
+          "displayName": "Seller",
+          "vcard": "BEGIN:VCARD\nVERSION:3.0\nFN:Seller\nTEL;type=CELL;waid=237690000000:+237 690 00 00 00\nEND:VCARD"
+        }
+      }
+    }
+  }
+}

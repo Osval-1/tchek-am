@@ -286,6 +286,22 @@ Enforced by a nightly job; every deletion is audit-logged.
 
 ---
 
+## ADR-014: Messaging boundary and webhook rules (implementation)
+Date: 2026-11-23 · Status: **Accepted**
+
+**Question:** How is the WaSender integration kept safe and swappable in code? (This came up while building ISSUES.md Issue 3.)
+
+**Decision:**
+- All WhatsApp I/O goes through the `MessagingChannel` protocol and `get_channel()`. Only `tchekam.messaging` may import `WaSenderChannel`, and a source-scan test enforces this.
+- Webhook idempotency: `InboundEvent.message_id` is unique, rows are created with `get_or_create`, and the processing job is enqueued only for a new row, via `transaction.on_commit`.
+- The webhook fails closed. An empty `WASENDER_WEBHOOK_SECRET` rejects every request, and prod refuses to start without it.
+- Channel errors and `InboundEvent.error` carry only the endpoint, status or exception class, never message bodies or phone numbers.
+- The WaSender API key is sent only to the API host, never to the media download host.
+
+**Consequences:** Swapping in the Meta Cloud API means writing one new class. `InboundEvent.payload` holds raw personal data, so it is covered by the 30-day retention rule (ADR-013).
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

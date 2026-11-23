@@ -1,0 +1,26 @@
+{
+  "event": "messages.received",
+  "timestamp": 1633456792,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-IMG-1",
+        "fromMe": false,
+        "remoteJid": "237670000004@s.whatsapp.net",
+        "cleanedSenderPn": "237670000004"
+      },
+      "messageBody": "Look at this receipt",
+      "message": {
+        "imageMessage": {
+          "url": "https://mmg.whatsapp.net/o1/v/t62/abc",
+          "mimetype": "image/jpeg",
+          "mediaKey": "bWVkaWFrZXk=",
+          "fileSha256": "c2hhMjU2",
+          "fileLength": "48213",
+          "caption": "Look at this receipt"
+        }
+      },
+      "messageTimestamp": 1633456792
+    }
+  }
+}

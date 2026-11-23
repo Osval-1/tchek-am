@@ -415,6 +415,8 @@ Set `last_activity_at` on every step.
   - Each action enqueues `notify.report_decided(report_id)` (Issue 15; a no-op until then).
 - **Approval rules:** approving requires at least one confirmed seller `PhoneNumber` subject. Only confirmed subjects count toward bands.
 
+- **Cache invalidation (ADR-015):** any change here that affects a band (subject `confirmed`, `has_payment_proof`, `incident_date`, `trust_weight`, appeals) must call `tchekam.reputation.service.invalidate_report(report)` or `invalidate_phone(e164)`, and a test must show the band updates immediately.
+
 **Acceptance Criteria**:
 - [ ] Non-staff users are redirected away from the queue and review pages.
 - [ ] Each action changes status, writes a decision and an audit entry, and invalidates the band cache (tested by calling `compute_band` before and after).
@@ -486,6 +488,8 @@ Only send if the reporter's last inbound message was within 24 h; otherwise queu
   The result is clamped to 0–1.
 - **Reporter weighting:** after each decision, recompute `trust_weight = (approved + 1) / (approved + rejected + 2)` (Laplace smoothing). Reporters whose weight is below 0.3 and who have at least 3 rejections are auto-limited to 1 report per week, and moderators see a warning.
 - **Duplicate evidence:** if a submitted evidence sha256 already exists in *another reporter's* report, add the tamper flag `duplicate_evidence`.
+
+- **Cache invalidation (ADR-015):** any change here that affects a band (subject `confirmed`, `has_payment_proof`, `incident_date`, `trust_weight`, appeals) must call `tchekam.reputation.service.invalidate_report(report)` or `invalidate_phone(e164)`, and a test must show the band updates immediately.
 
 **Acceptance Criteria**:
 - [ ] Each link reason has a test. Links are deduplicated and symmetric (stored once).
@@ -655,6 +659,8 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
   - Approving a "reports are wrong" appeal lets the moderator select which reports to set to rejected (each via transition, with reason "appeal").
   - The appellant is notified (respecting the 24 h rule from Issue 15).
 
+- **Cache invalidation (ADR-015):** any change here that affects a band (subject `confirmed`, `has_payment_proof`, `incident_date`, `trust_weight`, appeals) must call `tchekam.reputation.service.invalidate_report(report)` or `invalidate_phone(e164)`, and a test must show the band updates immediately.
+
 **Acceptance Criteria**:
 - [ ] Someone can't appeal a number other than their own sender number.
 - [ ] An open appeal makes F1 show "under appeal".
@@ -704,6 +710,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - **Group sightings:** delete those older than 24 months (orphaned Images too).
 - **Audit log:** never deleted.
 - **Legal hold:** a `legal_hold` toggle in the moderation admin for reports, numbers and users (audit-logged).
+- **Keep reporter trust after erasure (from the Issue 7 review):** before a `BotUser` is deleted or anonymised, store their `trust_weight` in a `ReporterTrust(reporter_key, trust_weight)` table. `reputation.service` reads trust from it when `reporter` is null, so an erased low-trust reporter doesn't regain full weight. Never rotate `REPORTER_KEY_SECRET`.
 
 **Acceptance Criteria**:
 - [ ] Each rule has a frozen-clock test with objects just inside and just outside its window.

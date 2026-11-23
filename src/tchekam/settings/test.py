@@ -8,3 +8,6 @@ TASKS_EAGER = True
 OBJECT_STORE_BACKEND = "memory"
 MESSAGING_CHANNEL = "fake"
 WASENDER_WEBHOOK_SECRET = "test-webhook-secret"
+REPORTER_KEY_SECRET = "test-reporter-key"
+# Fast and per-test isolated; base/prod use the shared DatabaseCache.
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}

@@ -1,0 +1,144 @@
+{% extends "moderation/base.html" %}
+{% block title %}Report {{ report.reference|default:report.pk }}{% endblock %}
+{% block content %}
+<h1>Report {{ report.reference|default:report.pk }} <small class="hint">({{ report.status }})</small></h1>
+
+<section>
+<h2>Evidence ({{ evidence|length }})</h2>
+<div class="gallery">
+{% for ev in evidence %}
+<figure>
+  {% if ev.mimetype|slice:":6" == "image/" %}
+    <img src="{% url 'moderation:evidence' ev.pk %}" alt="Evidence {{ ev.pk }} ({{ ev.kind }})" loading="lazy">
+  {% elif ev.mimetype|slice:":6" == "audio/" %}
+    <audio controls preload="none" src="{% url 'moderation:evidence' ev.pk %}"></audio>
+    <p><strong>Transcript</strong>{% if ev.transcript_confidence is not None %} (confidence {{ ev.transcript_confidence|floatformat:2 }}){% endif %}:<br>{{ ev.transcript|default:"(none)" }}</p>
+  {% else %}
+    <a href="{% url 'moderation:evidence' ev.pk %}">Open file {{ ev.pk }} ({{ ev.mimetype }})</a>
+  {% endif %}
+  <figcaption class="hint">#{{ ev.pk }} {{ ev.kind }}{% if ev.tamper_flags %} - tamper flags: {{ ev.tamper_flags|join:", " }}{% endif %}</figcaption>
+</figure>
+{% empty %}<p>No files.</p>{% endfor %}
+</div>
+</section>
+
+<section class="ai">
+<h2>AI hint - verify yourself</h2>
+<p>Payment proof candidate: <strong>{{ payment_proof_candidate|yesno:"yes,no" }}</strong></p>
+<p>Tamper observations:</p>
+<ul>{% for obs in tamper_observations %}<li>{{ obs }}</li>{% empty %}<li>none</li>{% endfor %}</ul>
+</section>
+
+<form method="post" action="{% url 'moderation:save' report.pk %}">
+{% csrf_token %}
+<input type="hidden" name="state_token" value="{{ token }}">
+{% if can_edit %}<input type="hidden" name="edits" value="1">{% endif %}
+
+<section>
+<h2>Facts</h2>
+<table>
+<tr><th>Reference</th><td>{{ report.reference|default:"-" }}</td></tr>
+<tr><th>Status</th><td>{{ report.status }}</td></tr>
+<tr><th>Evidence score</th><td>{{ report.evidence_score|floatformat:2 }}</td></tr>
+<tr><th>Scam type</th><td>{% if can_edit %}<select name="scam_type">
+  <option value="">---------</option>
+  {% for value, label in scam_types %}<option value="{{ value }}"{% if report.scam_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+</select>{% else %}{{ report.scam_type|default:"-" }}{% endif %}</td></tr>
+<tr><th>Amount (XAF)</th><td>{% if can_edit %}<input type="number" min="1" name="amount_xaf" value="{{ report.amount_xaf|default_if_none:'' }}">{% else %}{{ report.amount_xaf|default_if_none:"-" }}{% endif %}</td></tr>
+<tr><th>Incident date</th><td>{% if can_edit %}<input type="date" name="incident_date" value="{{ report.incident_date|date:'Y-m-d' }}">{% else %}{{ report.incident_date|default:"-" }}{% endif %}</td></tr>
+<tr><th>AI summary</th><td>{{ report.summary_ai|default:"-" }}</td></tr>
+<tr><th>Final summary</th><td>{% if can_edit %}<textarea name="summary_final" rows="4" maxlength="2000">{{ report.summary_final }}</textarea>{% else %}{{ report.summary_final|default:"-" }}{% endif %}</td></tr>
+<tr><th>Payment proof</th><td>{% if can_edit %}<label><input type="checkbox" name="has_payment_proof"{% if report.has_payment_proof %} checked{% endif %}> Payment proof confirmed</label>
+  <div class="hint">SMS and chat screenshot match and name the same number.</div>{% else %}{{ report.has_payment_proof|yesno:"yes,no" }}{% endif %}</td></tr>
+</table>
+<details><summary>Reporter's story</summary><p style="white-space: pre-wrap">{{ report.story_text|default:"(empty)" }}</p></details>
+</section>
+
+<section>
+<h2>Subjects</h2>
+<table>
+<thead><tr><th>Value</th><th>Role</th><th>Source</th><th>Confirmed</th><th>Remove</th></tr></thead>
+<tbody>
+{% for s in subjects %}
+<tr>
+<td>{% if s.phone_number %}{{ s.phone_number.e164 }}{% elif s.account_name %}{{ s.account_name.display_raw }} <span class="hint">({{ s.account_name.provider }})</span>{% else %}image subject{% endif %}</td>
+<td>{{ s.role }}</td><td>{{ s.source }}</td>
+<td>{% if can_edit %}<input type="checkbox" aria-label="Confirmed" name="confirmed_{{ s.pk }}"{% if s.confirmed %} checked{% endif %}>{% else %}{{ s.confirmed|yesno:"yes,no" }}{% endif %}</td>
+<td>{% if can_edit %}<input type="checkbox" aria-label="Remove subject" name="remove_{{ s.pk }}">{% endif %}</td>
+</tr>
+{% empty %}<tr><td colspan="5">No subjects.</td></tr>{% endfor %}
+</tbody>
+</table>
+{% if can_edit %}
+<h3>Add a subject</h3>
+<p><label>Seller phone number <input type="text" name="add_phone" maxlength="40"></label></p>
+<p><label>Payee name <input type="text" name="add_name" maxlength="255"></label>
+<select name="add_name_provider">{% for value, label in providers %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></p>
+{% endif %}
+</section>
+
+<section>
+<h2>Current public band</h2>
+{% for e164, band in bands %}
+<p>{{ e164 }}: <span class="band band-{{ band.band.value }}">{{ band.band.value }}</span>
+ - approved {{ band.approved_count }}, independent reporters {{ band.independent_reporters }}, pending {{ band.pending_count }}</p>
+{% empty %}<p>No seller phone subjects.</p>{% endfor %}
+</section>
+
+{% if can_edit %}
+<section>
+<h2>Decision</h2>
+<p><button type="submit" formaction="{% url 'moderation:save' report.pk %}">Save edits</button></p>
+<p class="hint">Approving counts the confirmed seller numbers toward the public band; unconfirmed subjects do not count.</p>
+<p><button type="submit" class="ok" name="action" value="approve" formaction="{% url 'moderation:decide' report.pk %}">Approve</button></p>
+<fieldset><legend>Reject</legend>
+<select name="reason_code" aria-label="Rejection reason"><option value="">Reason...</option>{% for value, label in reject_reasons %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+<textarea name="reason_text" aria-label="Rejection details" rows="2" maxlength="500" placeholder="Details (required for Other, max 500 characters)"></textarea>
+<button type="submit" class="danger" name="action" value="reject" formaction="{% url 'moderation:decide' report.pk %}">Reject</button>
+</fieldset>
+<fieldset><legend>Need more info</legend>
+<textarea name="message" aria-label="Question for the reporter" rows="2" maxlength="500" placeholder="Question for the reporter (1-500 characters)"></textarea>
+<button type="submit" name="action" value="need_info" formaction="{% url 'moderation:decide' report.pk %}">Ask the reporter</button>
+</fieldset>
+<fieldset><legend>Merge into another report</legend>
+<label>Target report id <input type="number" min="1" name="merge_target"></label>
+<button type="submit" name="action" value="merge" formaction="{% url 'moderation:decide' report.pk %}">Merge</button>
+</fieldset>
+</section>
+{% endif %}
+</form>
+
+{% if report.status == "rejected" %}
+<section>
+<h2>Reopen</h2>
+<form method="post" action="{% url 'moderation:decide' report.pk %}">
+{% csrf_token %}
+<input type="hidden" name="state_token" value="{{ token }}">
+<input type="hidden" name="action" value="reopen">
+<textarea name="reopen_reason" rows="2" maxlength="500" placeholder="Why reopen? (required)"></textarea>
+<button type="submit">Reopen as pending</button>
+</form>
+</section>
+{% elif not can_edit %}
+<p class="hint">This report is {{ report.status }} and cannot be edited.</p>
+{% endif %}
+
+<section>
+<h2>Linked reports</h2>
+<ul>{% for other, link in linked %}<li><a href="{% url 'moderation:review' other.pk %}">{{ other.reference|default:other.pk }}</a> ({{ link.reason }}, score {{ link.score|floatformat:2 }})</li>{% empty %}<li>none</li>{% endfor %}</ul>
+</section>
+
+<section>
+<h2>Reporter</h2>
+{% if history %}
+<p>Approved {{ history.approved }}, rejected {{ history.rejected }}, pending {{ history.pending }}; trust weight {{ history.trust_weight|floatformat:2 }}{% if history.blocked %}; <strong>blocked</strong>{% endif %}.</p>
+<form method="post" action="{% url 'moderation:reveal' report.pk %}">{% csrf_token %}
+<button type="submit">Reveal reporter number (audit-logged)</button></form>
+{% else %}<p>The reporter's data has been erased.</p>{% endif %}
+</section>
+
+<section>
+<h2>Previous decisions</h2>
+<ul>{% for d in decisions %}<li>{{ d.created_at|date:"Y-m-d H:i" }} - {{ d.action }} by {{ d.moderator.get_username }}{% if d.reason %}: {{ d.reason }}{% endif %}</li>{% empty %}<li>none</li>{% endfor %}</ul>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "moderation/base.html" %}
+{% block title %}Report changed{% endblock %}
+{% block content %}
+<h1>This report changed</h1>
+<section>
+<p>The report was modified (or already decided) since you opened this page, so nothing was saved. Reload the page and check the current state before acting.</p>
+<p><a href="{% url 'moderation:review' report_id %}">Reload the report</a></p>
+</section>
+{% endblock %}

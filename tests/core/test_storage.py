@@ -48,6 +48,14 @@ def test_get_missing_raises(store):
         store.get(new_key())
 
 
+def test_exists_reflects_presence(store):
+    key = new_key()
+    assert store.exists(key) is False
+
+    store.put(key, b"x", "text/plain")
+    assert store.exists(key) is True
+
+
 def test_delete_removes_and_is_idempotent(store):
     key = new_key()
     store.put(key, b"x", "text/plain")

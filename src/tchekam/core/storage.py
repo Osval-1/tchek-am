@@ -15,6 +15,7 @@ class ObjectStore(Protocol):
     def put(self, key: str, data: bytes, content_type: str) -> str: ...
     def get(self, key: str) -> bytes: ...
     def signed_url(self, key: str, ttl_seconds: int) -> str: ...
+    def exists(self, key: str) -> bool: ...
     def delete(self, key: str) -> None: ...
 
 
@@ -48,6 +49,9 @@ class InMemoryObjectStore:
             return self._objects[key][0]
         except KeyError:
             raise ObjectNotFoundError(key) from None
+
+    def exists(self, key: str) -> bool:
+        return key in self._objects
 
     def signed_url(self, key: str, ttl_seconds: int) -> str:
         return f"memory://{key}?ttl={ttl_seconds}"
@@ -104,6 +108,16 @@ class S3ObjectStore:
             if exc.response["Error"]["Code"] in ("NoSuchKey", "404"):
                 raise ObjectNotFoundError(key) from exc
             raise
+
+    def exists(self, key: str) -> bool:
+        # HEAD, so checking never downloads the evidence blob.
+        try:
+            self._client.head_object(Bucket=self.bucket, Key=key)
+        except ClientError as exc:
+            if exc.response["Error"]["Code"] in ("NoSuchKey", "404", "NotFound"):
+                return False
+            raise
+        return True
 
     def signed_url(self, key: str, ttl_seconds: int) -> str:
         return self._client.generate_presigned_url(

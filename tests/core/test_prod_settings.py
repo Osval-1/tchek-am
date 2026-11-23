@@ -3,10 +3,19 @@ import importlib
 import pytest
 
 
-@pytest.fixture
-def prod(monkeypatch):
+def _set_required_env(monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "x" * 60)
     monkeypatch.setenv("ALLOWED_HOSTS", "example.com")
+    monkeypatch.setenv("DATABASE_URL", "postgres://u:p@db:5432/x")
+    monkeypatch.setenv("S3_ENDPOINT_URL", "https://s3.example.com")
+    monkeypatch.setenv("S3_BUCKET", "b")
+    monkeypatch.setenv("S3_ACCESS_KEY", "ak")
+    monkeypatch.setenv("S3_SECRET_KEY", "sk")
+
+
+@pytest.fixture
+def prod(monkeypatch):
+    _set_required_env(monkeypatch)
     from tchekam.settings import prod
 
     yield importlib.reload(prod)
@@ -21,8 +30,20 @@ def test_prod_security_settings(prod):
 
 
 def test_prod_requires_allowed_hosts(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "x" * 60)
+    _set_required_env(monkeypatch)
     monkeypatch.delenv("ALLOWED_HOSTS", raising=False)
+    from django.core.exceptions import ImproperlyConfigured
+
+    from tchekam.settings import prod
+
+    with pytest.raises(ImproperlyConfigured):
+        importlib.reload(prod)
+
+
+@pytest.mark.parametrize("name", ["S3_SECRET_KEY", "S3_ENDPOINT_URL", "DATABASE_URL"])
+def test_prod_requires_infra_settings(monkeypatch, name):
+    _set_required_env(monkeypatch)
+    monkeypatch.delenv(name)
     from django.core.exceptions import ImproperlyConfigured
 
     from tchekam.settings import prod

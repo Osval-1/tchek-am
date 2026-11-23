@@ -1,0 +1,14 @@
+{
+  "note": "Single Orange Money transfer SMS with a 9-digit national number and the name after it.",
+  "images": ["../images/om_sms.png"],
+  "transcript": null,
+  "story": null,
+  "lang": "fr",
+  "expected": {
+    "phone_numbers": ["+237699001122"],
+    "account_names": ["ALINE FICTIVE"],
+    "amounts_xaf": [40000],
+    "reported_number": "+237699001122",
+    "evidence_kinds": ["momo_sms"]
+  }
+}

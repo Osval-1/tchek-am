@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "tchekam.reports",
     "tchekam.reputation",
     "tchekam.checks",
+    "tchekam.ai",
 ]
 
 MIDDLEWARE = [
@@ -117,3 +118,12 @@ LOGGING = {
 
 # Per user and local day, across all kinds of check.
 CHECKS_PER_DAY = env.int("CHECKS_PER_DAY", default=30)
+
+# AI (Claude): "anthropic" (real API) or "fake" (tests, offline dev).
+AI_BACKEND = env("AI_BACKEND", default="anthropic")
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
+# Haiku for routing and classification; Sonnet only for screenshot extraction.
+AI_MODEL_FAST = env("AI_MODEL_FAST", default="claude-haiku-5-5")
+AI_MODEL_VISION = env("AI_MODEL_VISION", default="claude-sonnet-5-5")
+# Server-side refusal fallback on extraction calls (Sonnet only; Haiku has none).
+AI_REFUSAL_FALLBACK = env.bool("AI_REFUSAL_FALLBACK", default=True)

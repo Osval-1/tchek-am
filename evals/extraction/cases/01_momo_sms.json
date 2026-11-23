@@ -1,0 +1,14 @@
+{
+  "note": "Single MTN MoMo transfer SMS. Payee name and number on one line; balance and fee must not count as amounts.",
+  "images": ["../images/momo_sms.png"],
+  "transcript": null,
+  "story": "J'ai envoye l'argent pour un telephone et le vendeur ne repond plus.",
+  "lang": "fr",
+  "expected": {
+    "phone_numbers": ["+237677001122"],
+    "account_names": ["JEAN TESTEUR"],
+    "amounts_xaf": [25000],
+    "reported_number": "+237677001122",
+    "evidence_kinds": ["momo_sms"]
+  }
+}

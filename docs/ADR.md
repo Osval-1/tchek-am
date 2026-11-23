@@ -319,6 +319,26 @@ Date: 2026-11-23 · Status: **Accepted**
 
 ---
 
+## ADR-016: AI module implementation
+Date: 2026-11-23 · Status: **Accepted**
+
+**Question:** How is Claude called, and what is recorded about each call? (This came up while building ISSUES.md Issue 9.)
+
+**Decision:**
+- **One seam to the provider:** Claude is called only through the `LLMClient` interface in `tchekam.ai`. Only `ai/anthropic_client.py` imports the `anthropic` SDK, and a source-scan test enforces this. The SDK installed is 2.12.0 (the brief assumed 1.x); its call shapes were checked against the installed source.
+- **Models:** `claude-haiku-5-5` for routing and message flags, `claude-sonnet-5-5` for screenshot extraction. Thinking stays at its adaptive default and depth is set with `output_config.effort` (medium for extraction). No sampling parameters, no prefill, no forced tool choice.
+- **Structured output:** a JSON schema built from pydantic models (`output_config.format`), with every property required and no extra properties, not tool use.
+- **Refusal fallback:** Sonnet extraction calls use the server-side refusal fallback (`AI_REFUSAL_FALLBACK`, on by default). Consequence: a different model may then process the evidence, so the served model is logged on every call. Haiku has no fallback. A refusal or a `max_tokens` stop counts as an extraction failure.
+- **Images:** all of a report's images go to Sonnet in one call (this replaces the architecture note about one call per image, because cross-checking chat against payment screenshots needs them together). Skipped or over-cap images keep their slot in `evidence_kinds` as "other". Images that are oversized or look like decompression bombs are skipped, never raised on.
+- **Signature:** `extract_evidence(images: list[(bytes, mimetype)], transcript, story, lang)`.
+- **Call log:** `AICallLog` stores metadata only: served model, token counts (including cache read/write), latency, error class, request id. It never stores prompts, responses, images or phone numbers. It has no cost column; cost is derived from tokens when needed.
+- **Prompts:** versioned files `ai/prompts/<purpose>/vN.md`, with the highest N used and the version logged.
+- **Wording rule (R4):** the prompt forbids accusatory labels, and a deterministic post-filter removes banned terms from the model's summary and tamper observations before anything is shown.
+
+**Consequences:** The provider can be swapped by writing one class. Evidence is processed by Anthropic (and possibly a fallback model), which the privacy notice must name. Extraction quality is measured by the eval runner (`python -m evals.run extraction`) once real, anonymised cases exist.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

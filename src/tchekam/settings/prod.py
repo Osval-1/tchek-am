@@ -16,6 +16,8 @@ WASENDER_API_KEY = env("WASENDER_API_KEY")
 TERMS_URL = env("TERMS_URL")
 # Pseudonymous reporter identity; a placeholder would make keys guessable from phone numbers.
 REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
+# Extraction and classification need Claude; an empty key would fail every call silently.
+ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

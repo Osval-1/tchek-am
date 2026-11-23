@@ -36,15 +36,15 @@ def plain_user(db):
 
 
 @pytest.fixture
-def staff_client(client, staff):
-    client.force_login(staff)
+def staff_client(client, staff, otp_login):
+    otp_login(client, staff)
     return client
 
 
 @pytest.fixture
-def plain_client(plain_user):
+def plain_client(plain_user, otp_login):
     c = Client()
-    c.force_login(plain_user)
+    otp_login(c, plain_user)  # verified, yet still not staff
     return c
 
 

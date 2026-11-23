@@ -1,11 +1,9 @@
 """Staff-only moderation pages. Thin: rules and state changes live in service.py."""
 
-import ipaddress
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
@@ -16,6 +14,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 from tchekam.core.audit import audit
+from tchekam.core.http import client_ip
 from tchekam.core.storage import get_object_store
 from tchekam.identifiers.models import AccountName
 from tchekam.reports.models import Evidence, Report, ReportLink, ReportSubject
@@ -31,7 +30,7 @@ HIDDEN_STATUSES = ("draft", "withdrawn")
 
 
 def staff_required(view: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
-    """Anonymous -> admin login; signed in but not staff -> 403 (no login loop)."""
+    """Anonymous or no OTP -> admin login (which asks for the token); not staff -> 403."""
 
     @wraps(view)
     def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -40,6 +39,9 @@ def staff_required(view: Callable[..., HttpResponse]) -> Callable[..., HttpRespo
             return redirect_to_login(request.get_full_path(), reverse("admin:login"))
         if not user.is_staff:
             raise PermissionDenied
+        # Fail closed: a password-only session never reaches evidence.
+        if not user.is_verified():
+            return redirect_to_login(request.get_full_path(), reverse("admin:login"))
         return view(request, *args, **kwargs)
 
     return wrapper
@@ -50,18 +52,6 @@ def _private(response: HttpResponse) -> HttpResponse:
     response["Cache-Control"] = "no-store"
     response["Referrer-Policy"] = "no-referrer"
     return response
-
-
-def client_ip(request: HttpRequest) -> str | None:
-    """REMOTE_ADDR, or the first X-Forwarded-For hop when we sit behind a trusted proxy."""
-    candidate = request.META.get("REMOTE_ADDR", "")
-    if settings.TRUST_PROXY_HEADERS:
-        forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-        candidate = forwarded.split(",")[0].strip() or candidate
-    try:
-        return str(ipaddress.ip_address(candidate))
-    except ValueError:
-        return None  # never store an unvalidated header value
 
 
 def _viewable_report(report_id: int) -> Report:

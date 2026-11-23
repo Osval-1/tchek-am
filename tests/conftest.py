@@ -44,3 +44,20 @@ def object_store():
     store.reset()
     yield store
     store.reset()
+
+
+@pytest.fixture
+def otp_login():
+    """Log `user` in with a verified OTP session (what a real password + token login yields)."""
+    from django_otp import DEVICE_ID_SESSION_KEY
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+
+    def login(client, user):
+        device = TOTPDevice.objects.create(user=user, name="test", confirmed=True)
+        client.force_login(user)
+        session = client.session
+        session[DEVICE_ID_SESSION_KEY] = device.persistent_id
+        session.save()
+        return device
+
+    return login

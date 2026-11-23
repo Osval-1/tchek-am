@@ -15,7 +15,11 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.admin",
+    # Custom config swaps in the OTP-enforcing admin site (core/admin_site.py).
+    "tchekam.core.apps.TchekAdminConfig",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
     # Before apps that define tasks, so the Procrastinate app is ready when they register.
     "procrastinate.contrib.django",
     "tchekam.core",
@@ -37,6 +41,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django_otp.middleware.OTPMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -147,6 +152,22 @@ GROQ_API_KEY = env("GROQ_API_KEY", default="")
 GROQ_BASE_URL = env("GROQ_BASE_URL", default="https://api.groq.com/openai/v1")
 SPEECH_MODEL = env("SPEECH_MODEL", default="whisper-large-v3")
 
-# Trust the first X-Forwarded-For hop as the client IP (audit logs). Only enable behind a proxy
-# that overwrites the header; otherwise anyone could forge the IP written to the audit log.
-TRUST_PROXY_HEADERS = env.bool("TRUST_PROXY_HEADERS", default=False)
+# Number of trusted reverse proxies in front of Django. 0: ignore X-Forwarded-For and use
+# REMOTE_ADDR. N: the client IP is the N-th entry from the RIGHT of X-Forwarded-For (the one our
+# outermost proxy appended; anything further left can be forged). Render: set 1 (verify at
+# deploy). Never leave 0 behind a proxy: every client would then share the proxy's IP, so
+# audit logs and login throttling would treat all users as one.
+TRUSTED_PROXY_COUNT = env.int("TRUSTED_PROXY_COUNT", default=0)
+
+# Moderator security: TOTP 2FA (django-otp). Failed token checks back off exponentially:
+# after n consecutive failures a device refuses tokens for 5 * 2**(n-1) seconds.
+OTP_TOTP_ISSUER = "Tchek-Am"
+OTP_TOTP_THROTTLE_FACTOR = 5
+
+# Sessions: 8 h idle timeout (refreshed on every request), gone when the browser closes.
+SESSION_COOKIE_AGE = 8 * 3600
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Strict"
+CSRF_COOKIE_SAMESITE = "Strict"

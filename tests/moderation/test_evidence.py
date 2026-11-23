@@ -37,15 +37,15 @@ def test_every_request_writes_one_audit_entry(staff_client, make_report):
 
 def test_forwarded_for_is_ignored_unless_proxy_is_trusted(staff_client, make_report, settings):
     report = make_report()
-    headers = {"REMOTE_ADDR": "10.0.0.1", "HTTP_X_FORWARDED_FOR": "203.0.113.9, 10.0.0.1"}
+    headers = {"REMOTE_ADDR": "10.0.0.1", "HTTP_X_FORWARDED_FOR": "203.0.113.9"}
 
     staff_client.get(url_for(report), **headers)
-    settings.TRUST_PROXY_HEADERS = True
+    settings.TRUSTED_PROXY_COUNT = 1
     staff_client.get(url_for(report), **headers)
     staff_client.get(url_for(report), REMOTE_ADDR="10.0.0.1", HTTP_X_FORWARDED_FOR="not-an-ip")
 
     ips = list(AuditLog.objects.order_by("id").values_list("ip", flat=True))
-    assert ips == ["10.0.0.1", "203.0.113.9", None]
+    assert ips == ["10.0.0.1", "203.0.113.9", "10.0.0.1"]  # invalid hop falls back
 
 
 def test_missing_blob_is_404_and_unknown_evidence_is_404(staff_client, make_report, object_store):

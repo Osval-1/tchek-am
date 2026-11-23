@@ -14,8 +14,8 @@ MODELS = [Image, Report, Evidence, ReportSubject, ReportLink, ModerationDecision
 
 
 @pytest.fixture
-def client_su(client):
-    client.force_login(get_user_model().objects.create_superuser("root", password="x"))
+def client_su(client, otp_login):
+    otp_login(client, get_user_model().objects.create_superuser("root", password="x"))
     return client
 
 

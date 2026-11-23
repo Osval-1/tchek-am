@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "tchekam.core",
     "tchekam.messaging",
     "tchekam.identifiers",
+    "tchekam.conversations",
 ]
 
 MIDDLEWARE = [
@@ -84,6 +85,9 @@ WASENDER_API_KEY = env("WASENDER_API_KEY", default="")
 WASENDER_BASE_URL = env("WASENDER_BASE_URL", default="https://www.wasenderapi.com/api")
 # Empty means the webhook rejects every request (fail closed).
 WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET", default="")
+
+# Linked from the main menu as the privacy policy and terms of use.
+TERMS_URL = env("TERMS_URL", default="https://tchek-am.example/terms")
 
 LOGGING = {
     "version": 1,

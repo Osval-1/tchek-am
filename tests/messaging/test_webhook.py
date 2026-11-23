@@ -2,7 +2,9 @@ import json
 
 import pytest
 
+from tchekam.conversations.models import BotUser
 from tchekam.core import tasks
+from tchekam.i18n import t
 from tchekam.messaging import hooks
 from tchekam.messaging.models import InboundEvent
 
@@ -145,27 +147,27 @@ def test_exact_path_without_trailing_slash_accepts_post(client, payload, fake_ch
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ("fixture", "to", "text"),
+    ("fixture", "to"),
     [
-        ("private_text_received", "237670000001", "Hello bot"),
-        ("private_text_personal", "237670000002", "Is this number safe?"),
-        ("flat_data_envelope", "237670000006", "Flat envelope text"),
+        ("private_text_received", "237670000001"),
+        ("private_text_personal", "237670000002"),
+        ("flat_data_envelope", "237670000006"),
     ],
 )
-def test_echo_reply_goes_to_sender(
-    client, payload, fake_channel, django_capture_on_commit_callbacks, fixture, to, text
+def test_new_user_gets_language_picker_at_sender(
+    client, payload, fake_channel, django_capture_on_commit_callbacks, fixture, to
 ):
     with django_capture_on_commit_callbacks(execute=True):
         post(client, payload(fixture))
 
-    assert fake_channel.sent == [{"type": "text", "to": to, "text": f"Tchek-Am received: {text}"}]
+    assert fake_channel.sent == [{"type": "text", "to": to, "text": t("lang.picker", None)}]
     event = InboundEvent.objects.get()
     assert event.status == InboundEvent.Status.PROCESSED
     assert event.processed_at is not None
 
 
 @pytest.mark.django_db
-def test_group_message_goes_to_hook_not_echo(
+def test_group_message_goes_to_hook_not_routed(
     client, payload, fake_channel, monkeypatch, django_capture_on_commit_callbacks
 ):
     seen = []
@@ -175,18 +177,19 @@ def test_group_message_goes_to_hook_not_echo(
         post(client, payload("group_text"))
 
     assert fake_channel.sent == []
+    assert BotUser.objects.count() == 0
     assert [m.group_jid for m in seen] == ["120363000000000001@g.us"]
     assert InboundEvent.objects.get().status == InboundEvent.Status.PROCESSED
 
 
 @pytest.mark.django_db
-def test_private_media_is_not_echoed(
+def test_private_media_from_new_user_is_not_echoed(
     client, payload, fake_channel, django_capture_on_commit_callbacks
 ):
     with django_capture_on_commit_callbacks(execute=True):
         post(client, payload("image_caption"))
 
-    assert fake_channel.sent == []
+    assert [m["text"] for m in fake_channel.sent] == [t("lang.picker", None)]
     assert InboundEvent.objects.get().status == InboundEvent.Status.PROCESSED
 
 

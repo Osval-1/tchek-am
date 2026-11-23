@@ -54,12 +54,12 @@ def test_post_only_views_reject_get_and_get_views_reject_post(staff_client, urls
         assert getattr(staff_client, other)(url).status_code == 405, url
 
 
-def test_csrf_is_enforced_on_every_post(make_report, staff):
+def test_csrf_is_enforced_on_every_post(make_report, staff, otp_login):
     from django.test import Client
 
     report = make_report()
     client = Client(enforce_csrf_checks=True)
-    client.force_login(staff)
+    otp_login(client, staff)
     for name in ("save", "decide", "reveal"):
         resp = client.post(reverse(f"moderation:{name}", args=[report.pk]), {"action": "approve"})
         assert resp.status_code == 403, name

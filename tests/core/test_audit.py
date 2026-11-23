@@ -56,10 +56,10 @@ def test_queryset_update_and_delete_raise():
     assert AuditLog.objects.count() == 1
 
 
-def test_admin_is_read_only(client):
+def test_admin_is_read_only(client, otp_login):
     admin = get_user_model().objects.create_superuser("root", password="x")
     row = audit(None, "a")
-    client.force_login(admin)
+    otp_login(client, admin)
 
     assert client.get(reverse("admin:core_auditlog_changelist")).status_code == 200
     assert client.get(reverse("admin:core_auditlog_add")).status_code == 403

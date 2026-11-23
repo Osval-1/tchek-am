@@ -36,6 +36,25 @@ def test_prod_security_settings(prod):
     assert prod.REPORTER_KEY_SECRET == "rk" * 32
 
 
+def test_prod_session_and_cookie_hardening(prod):
+    assert prod.SESSION_COOKIE_SECURE is True and prod.CSRF_COOKIE_SECURE is True
+    assert prod.SECURE_HSTS_SECONDS > 0
+    assert prod.SESSION_COOKIE_HTTPONLY is True
+    assert prod.SESSION_COOKIE_SAMESITE == "Strict"
+    assert prod.CSRF_COOKIE_SAMESITE == "Strict"
+    assert prod.SESSION_COOKIE_AGE == 8 * 3600
+    assert prod.SESSION_SAVE_EVERY_REQUEST is True  # idle, not absolute, timeout
+    assert prod.SESSION_EXPIRE_AT_BROWSER_CLOSE is True
+
+
+def test_prod_enforces_otp(prod):
+    auth = prod.MIDDLEWARE.index("django.contrib.auth.middleware.AuthenticationMiddleware")
+    assert prod.MIDDLEWARE[auth + 1] == "django_otp.middleware.OTPMiddleware"
+    assert "tchekam.core.apps.TchekAdminConfig" in prod.INSTALLED_APPS
+    assert "django.contrib.admin" not in prod.INSTALLED_APPS
+    assert prod.OTP_TOTP_ISSUER == "Tchek-Am" and prod.OTP_TOTP_THROTTLE_FACTOR == 5
+
+
 def test_prod_uses_the_shared_database_cache(prod):
     # Web (moderation) and worker (checks) must see the same band invalidations.
     assert prod.CACHES["default"]["BACKEND"] == "django.core.cache.backends.db.DatabaseCache"

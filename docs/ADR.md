@@ -363,6 +363,25 @@ Date: 2026-11-23 · Status: **Accepted**
 
 ---
 
+## ADR-018: Moderator access control
+Date: 2026-11-23 · Status: **Accepted**
+
+**Question:** How is access to victims' evidence protected? (This came up while building ISSUES.md Issue 14.)
+
+**Decision:**
+- **Two-step login:** every `/moderation/` and `/admin/` page requires a password plus a one-time code from an authenticator app (django-otp TOTP). A staff user with no enrolled device cannot log in at all.
+- **Enrolment is command-line only** (`add_totp`), so there is no web page that could be abused to add a device. It prints the secret, the setup link and 8 one-time recovery codes once.
+- **Sessions:** expire after 8 hours without activity and when the browser closes; cookies are HttpOnly, SameSite=Strict, Secure and HSTS in production.
+- **Login throttle:** 5 failures per username (after the same Unicode normalisation Django uses) or 20 per client address lock further attempts for 15 minutes. The message is identical for unknown users. An operator can clear a lock with `unlock_login`.
+- **Client address:** taken from the connection, or from the N-th hop from the right of `X-Forwarded-For` where `TRUSTED_PROXY_COUNT=N` (never the first, client-controlled hop).
+- **Audit:** every evidence view, login, failed login (only an HMAC prefix of the username) and unlock is logged.
+
+**Accepted risks:** a correct password (without a token) is confirmable through the device-selection step of the login form, limited by the throttle to 5 guesses per account per 15 minutes (a later improvement is to pre-select the single device and show one generic error before the token is verified); changing `SECRET_KEY` resets login counters and makes older audit hashes unmatchable; recovery codes are stored unhashed in the database (an attacker who can read the database can already reach the evidence references); the lock counter is not atomic on the shared database cache, so concurrent failures may undercount slightly.
+
+**Consequences:** The only way to the evidence is a verified moderator session. Locking out the founder by deliberate failed logins is possible but recoverable with `unlock_login`.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

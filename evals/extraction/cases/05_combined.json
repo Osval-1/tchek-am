@@ -1,0 +1,15 @@
+{
+  "note": "Pidgin chat plus the MoMo SMS: the payee number and name on the SMS match the seller in the chat, so payment_proof_candidate should be true.",
+  "images": ["../images/combined_chat.png", "../images/momo_sms.png"],
+  "transcript": "I pay the man 25000 for Samsung, after he block me.",
+  "story": null,
+  "lang": "pcm",
+  "expected": {
+    "phone_numbers": ["+237677001122"],
+    "account_names": ["JEAN TESTEUR"],
+    "amounts_xaf": [60000, 25000],
+    "reported_number": "+237677001122",
+    "evidence_kinds": ["chat", "momo_sms"],
+    "payment_proof_candidate": true
+  }
+}

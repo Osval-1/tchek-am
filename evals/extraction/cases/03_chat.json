@@ -1,0 +1,14 @@
+{
+  "note": "WhatsApp-style chat, French. Seller quotes 85000 and asks for a 30000 advance to a spaced-out number. No account name.",
+  "images": ["../images/chat.png"],
+  "transcript": "Il m'a dit d'envoyer l'avance et depuis il ne repond plus.",
+  "story": null,
+  "lang": "fr",
+  "expected": {
+    "phone_numbers": ["+237650112233"],
+    "account_names": [],
+    "amounts_xaf": [85000, 30000],
+    "reported_number": "+237650112233",
+    "evidence_kinds": ["chat"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "note": "Product post with the contact number split across two lines and a dotted amount (150.000 FCFA).",
+  "images": ["../images/post.png"],
+  "transcript": null,
+  "story": "I saw this post and paid but no phone came.",
+  "lang": "en",
+  "expected": {
+    "phone_numbers": ["+237699876543"],
+    "account_names": [],
+    "amounts_xaf": [150000],
+    "reported_number": "+237699876543",
+    "evidence_kinds": ["post"]
+  }
+}

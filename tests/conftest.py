@@ -11,3 +11,14 @@ def fake_channel():
     channel.reset()
     yield channel
     channel.reset()
+
+
+@pytest.fixture
+def fake_llm():
+    """The FakeLLMClient singleton that get_llm_client() returns under AI_BACKEND="fake"."""
+    from tchekam.ai.fake import FakeLLMClient
+
+    client = FakeLLMClient.instance()
+    client.reset()
+    yield client
+    client.reset()

@@ -12,6 +12,7 @@ dependencies = [
     "procrastinate[django]>=3",
     "httpx>=0.27",
     "boto3>=1.44.9",
+    "phonenumbers>=9.0.44",
 ]
 
 [dependency-groups]

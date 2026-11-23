@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "procrastinate.contrib.django",
     "tchekam.core",
     "tchekam.messaging",
+    "tchekam.identifiers",
 ]
 
 MIDDLEWARE = [

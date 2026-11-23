@@ -14,6 +14,7 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("WASENDER_WEBHOOK_SECRET", "whsec")
     monkeypatch.setenv("WASENDER_API_KEY", "wk")
     monkeypatch.setenv("TERMS_URL", "https://example.com/terms")
+    monkeypatch.setenv("REPORTER_KEY_SECRET", "rk" * 32)
 
 
 @pytest.fixture
@@ -30,6 +31,12 @@ def test_prod_security_settings(prod):
     assert prod.CSRF_COOKIE_SECURE is True
     assert prod.SECURE_HSTS_SECONDS > 0
     assert prod.ALLOWED_HOSTS == ["example.com"]
+    assert prod.REPORTER_KEY_SECRET == "rk" * 32
+
+
+def test_prod_uses_the_shared_database_cache(prod):
+    # Web (moderation) and worker (checks) must see the same band invalidations.
+    assert prod.CACHES["default"]["BACKEND"] == "django.core.cache.backends.db.DatabaseCache"
 
 
 def test_prod_requires_allowed_hosts(monkeypatch):
@@ -52,6 +59,7 @@ def test_prod_requires_allowed_hosts(monkeypatch):
         "WASENDER_WEBHOOK_SECRET",
         "WASENDER_API_KEY",
         "TERMS_URL",
+        "REPORTER_KEY_SECRET",
     ],
 )
 def test_prod_requires_infra_settings(monkeypatch, name):

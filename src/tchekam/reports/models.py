@@ -8,6 +8,8 @@ from tchekam.core.audit import audit
 from tchekam.identifiers.models import AccountName, PhoneNumber
 from tchekam.imaging.models import Image
 
+from .keys import reporter_key_for
+from .signals import report_status_changed
 from .transitions import InvalidTransition, check_transition
 
 # Only live reports can absorb duplicates; merging into draft/rejected/withdrawn/merged is nonsense.
@@ -35,6 +37,8 @@ class Report(models.Model):
     reporter = models.ForeignKey(
         BotUser, null=True, blank=True, on_delete=models.SET_NULL, related_name="reports"
     )
+    # Survives erasure, so an erased reporter's reports still count as one person (ADR-005).
+    reporter_key = models.CharField(max_length=64, blank=True, db_index=True)
     status = models.CharField(
         max_length=12, choices=Status.choices, default=Status.DRAFT, db_index=True
     )
@@ -56,8 +60,27 @@ class Report(models.Model):
     last_activity_at = models.DateTimeField(default=timezone.now)
     legal_hold = models.BooleanField(default=False)
 
+    class Meta:
+        constraints = [
+            # A live reporter always has a key, so independence never has to guess identity.
+            models.CheckConstraint(
+                name="report_reporter_has_key",
+                condition=Q(reporter__isnull=True) | ~Q(reporter_key=""),
+            )
+        ]
+
     def __str__(self) -> str:
         return f"Report {self.reference or self.pk} ({self.status})"
+
+    def save(self, *args, **kwargs) -> None:
+        # Runs before every save, so the constraint above always holds for saved reports.
+        # Set once and never rewritten: rotating the secret must not split a reporter in two.
+        if self.reporter_id and not self.reporter_key:
+            self.reporter_key = reporter_key_for(self.reporter.wa_phone)
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = {*update_fields, "reporter_key"}
+        super().save(*args, **kwargs)
 
     _TRANSITION_FIELDS = ("status", "submitted_at", "decided_at", "last_activity_at", "merged_into")
 
@@ -92,6 +115,11 @@ class Report(models.Model):
                 row.merged_into = merged_into
             row.save(update_fields=list(self._TRANSITION_FIELDS))
             audit(actor, "report.transition", row, from_=old, to=to, reason=reason)
+            transaction.on_commit(
+                lambda: report_status_changed.send(
+                    sender=type(self), report=row, from_status=old, to_status=to
+                )
+            )
         for name in self._TRANSITION_FIELDS:
             attr = self._meta.get_field(name).attname
             setattr(self, attr, getattr(row, attr))

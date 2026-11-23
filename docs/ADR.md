@@ -302,6 +302,23 @@ Date: 2026-11-23 · Status: **Accepted**
 
 ---
 
+## ADR-015: Reputation engine implementation safeguards
+Date: 2026-11-23 · Status: **Accepted**
+
+**Question:** Which implementation details does the band logic need to stay defensible? (This came up while building ISSUES.md Issue 7.)
+
+**Decision:**
+- **Structure:** pure facts → rules → service layers, with `now` passed in explicitly. The rules are pure functions with 100% branch coverage, enforced in CI.
+- **Report age:** the earlier of the decision date and the incident date. Counted in days (365 / 730), in the Africa/Douala timezone.
+- **Reporter identity:** each report keeps a stable pseudonymous `reporter_key` (HMAC of the reporter's number). Independence is judged on this key, so a reporter who erases their account can't turn into several "independent" reporters.
+- **Low-trust reporters:** a reporter with trust weight below 0.3 still *links* other reporters as dependent, but a group made up only of low-trust reporters doesn't count as an independent reporter. Their reports also can't make a number red through payment proof, and can't meet the "approved report in the last 12 months" condition. An erased reporter is treated as having trust 0.0 until a trust record that survives erasure exists (ISSUES.md Issue 24).
+- **Monotonicity invariant:** lowering a reporter's trust, or erasing a reporter, must never make a band more severe. A property test enforces this. The "names the other reporter's number" link compares pseudonymous keys, so it still works after erasure.
+- **Cache:** band results are cached in a **shared database cache** (not per process) for 1 hour. The cache is cleared after commit through a `report_status_changed` signal. Any other change that affects a band (subject confirmation, payment proof, trust weight, appeals) must call `invalidate_report` / `invalidate_phone`.
+
+**Consequences:** Results stay consistent across the web and worker processes, and the rules can be audited and tested in isolation. Prod needs `REPORTER_KEY_SECRET`; rotating it would split reporter identities.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

@@ -16,3 +16,4 @@ staticfiles/
 .vscode/
 .claude/settings.local.json
 .scratch/
+.hypothesis/

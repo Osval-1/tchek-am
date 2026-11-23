@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "tchekam.conversations",
     "tchekam.imaging",
     "tchekam.reports",
+    "tchekam.reputation",
     "tchekam.checks",
 ]
 
@@ -67,6 +68,20 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# Shared cache (reputation bands, 1 h) in Postgres, so an invalidation made by the web process
+# (moderation) is seen by the worker (checks) at once. The table is created by the
+# reputation migration 0001_cache_table. Test settings use LocMem.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "tchekam_cache",
+    }
+}
+
+# HMAC key for Report.reporter_key (pseudonymous reporter identity that survives erasure).
+# Never change it once reports exist: existing keys are kept, new ones would differ.
+REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET", default="insecure-local-reporter-key")
 
 # Background tasks: run inline when True (test settings); otherwise deferred to the worker.
 TASKS_EAGER = env.bool("TASKS_EAGER", default=False)

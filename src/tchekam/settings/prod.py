@@ -14,6 +14,8 @@ WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET")
 WASENDER_API_KEY = env("WASENDER_API_KEY")
 # Linked from the menu; a placeholder URL in prod would send users to a dead page.
 TERMS_URL = env("TERMS_URL")
+# Pseudonymous reporter identity; a placeholder would make keys guessable from phone numbers.
+REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

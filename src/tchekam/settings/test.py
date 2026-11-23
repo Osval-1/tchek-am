@@ -9,6 +9,8 @@ OBJECT_STORE_BACKEND = "memory"
 MESSAGING_CHANNEL = "fake"
 AI_BACKEND = "fake"
 ANTHROPIC_API_KEY = ""
+SPEECH_BACKEND = "fake"
+GROQ_API_KEY = ""
 WASENDER_WEBHOOK_SECRET = "test-webhook-secret"
 REPORTER_KEY_SECRET = "test-reporter-key"
 # Fast and per-test isolated; base/prod use the shared DatabaseCache.

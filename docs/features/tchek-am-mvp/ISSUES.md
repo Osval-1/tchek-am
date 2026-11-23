@@ -434,7 +434,7 @@ Set `last_activity_at` on every step.
 **Tier**: MID
 **Description**:
 - Require TOTP 2FA (`django-otp` + `django-otp`'s TOTP plugin) for every staff login to admin and moderation, with a setup flow for the first device.
-- Evidence is served only via `GET /moderation/evidence/<id>`. It checks staff + OTP-verified, writes `AuditLog("evidence.view")`, then 302-redirects to a signed URL with a 5-minute TTL. Templates must use this route, never raw object keys.
+- Evidence is served only via `GET /moderation/evidence/<id>/` (**built in Issue 13**: staff-only, audited on every request, 302 to a 5-minute signed URL, no-store headers). This issue adds the OTP-verified requirement to that route and to every other `/moderation/` and `/admin/` view, and keeps a test that no template contains `object_key`.
 - Sessions expire after 8 h idle, with `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` and HSTS in prod settings.
 - Throttle failed logins with a simple counter per username and IP.
 
@@ -452,7 +452,7 @@ Set `last_activity_at` on every step.
 ## Issue 15: Reporter notifications, need-more-info loop and next-steps guidance
 
 **Tier**: MID
-**Description**: Add `notify.report_decided(report_id)`, which sends the reporter a catalogue message in their language.
+**Description**: Implement the registered task `notify.report_decided(report_id, decision_id)` (a no-op stub exists in `reports/tasks.py` since Issue 13; keep its signature and enqueue it from nowhere else). It sends the reporter a catalogue message in their language, using the `ModerationDecision` (action, reason) to choose and fill the message.
 - **Approved:** thanks the reporter and explains the effect ("this number now shows a warning to buyers").
 - **Rejected:** states the reason category and how to add evidence.
 - **Needs info:** shows the moderator's question; the reporter's next messages reopen the report flow in `needs_info` mode, where they add evidence or text and then `DONE` sends it back to `pending`.

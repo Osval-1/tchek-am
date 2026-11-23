@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "tchekam.checks",
     "tchekam.ai",
     "tchekam.speech",
+    "tchekam.moderation",
 ]
 
 MIDDLEWARE = [
@@ -145,3 +146,7 @@ SPEECH_BACKEND = env("SPEECH_BACKEND", default="groq")
 GROQ_API_KEY = env("GROQ_API_KEY", default="")
 GROQ_BASE_URL = env("GROQ_BASE_URL", default="https://api.groq.com/openai/v1")
 SPEECH_MODEL = env("SPEECH_MODEL", default="whisper-large-v3")
+
+# Trust the first X-Forwarded-For hop as the client IP (audit logs). Only enable behind a proxy
+# that overwrites the header; otherwise anyone could forge the IP written to the audit log.
+TRUST_PROXY_HEADERS = env.bool("TRUST_PROXY_HEADERS", default=False)

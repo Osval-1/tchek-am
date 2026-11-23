@@ -363,3 +363,16 @@ def link(report_id: int) -> None:
 
     A no-op until Issue 16; queued from the submit step so that issue only fills this in.
     """
+
+
+# Notify ------------------------------------------------------------------------------------------
+
+
+# Issue 15 must keep this signature: moderation enqueues it as (report_id=, decision_id=).
+@register("notify.report_decided")
+def report_decided(report_id: int, decision_id: int) -> None:
+    """Tell the reporter about a moderation decision (approved, rejected, needs info, merged).
+
+    A no-op until Issue 15; queued after every moderation decision commits so that issue only
+    fills this in.
+    """

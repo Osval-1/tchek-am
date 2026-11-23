@@ -1,0 +1,11 @@
+{% extends "moderation/base.html" %}
+{% block title %}Reporter number{% endblock %}
+{% block content %}
+<h1>Reporter number</h1>
+<section>
+<p>This view has been written to the audit log. The number is shown once; reloading this page will not show it again.</p>
+<p>Report {{ report.reference|default:report.pk }}:
+{% if number %}<strong>{{ number }}</strong>{% else %}<em>The reporter's data has been erased.</em>{% endif %}</p>
+<p><a href="{% url 'moderation:review' report.pk %}">Back to the report</a></p>
+</section>
+{% endblock %}

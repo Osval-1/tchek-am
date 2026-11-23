@@ -24,7 +24,19 @@ def new_key(prefix: str = "evidence") -> str:
 
 
 class InMemoryObjectStore:
+    _instance: "InMemoryObjectStore | None" = None
+
     def __init__(self) -> None:
+        self.reset()
+
+    @classmethod
+    def instance(cls) -> "InMemoryObjectStore":
+        """The process-wide store behind the "memory" backend, so it behaves like one bucket."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def reset(self) -> None:
         self._objects: dict[str, tuple[bytes, str]] = {}
 
     def put(self, key: str, data: bytes, content_type: str) -> str:
@@ -107,7 +119,7 @@ class S3ObjectStore:
 def get_object_store() -> ObjectStore:
     backend = settings.OBJECT_STORE_BACKEND
     if backend == "memory":
-        return InMemoryObjectStore()
+        return InMemoryObjectStore.instance()
     if backend == "s3":
         return S3ObjectStore.from_settings()
     raise ValueError(f"Unknown OBJECT_STORE_BACKEND: {backend!r}")

@@ -710,6 +710,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - **Group sightings:** delete those older than 24 months (orphaned Images too).
 - **Audit log:** never deleted.
 - **Legal hold:** a `legal_hold` toggle in the moderation admin for reports, numbers and users (audit-logged).
+- **Personal-data fields added by Issue 11 (from the Issue 11 brief):** `Report.story_text` and `Report.ai_extraction` hold personal data. Apply the same rules as evidence and summaries: delete or null them for rejected reports after 90 days, and for approved reports at 36 months (keeping only anonymised statistics); abandoned drafts after 7 days delete them with the draft. `Evidence.transcript` follows the voice-note rule. Add retention tests for each.
 - **Keep reporter trust after erasure (from the Issue 7 review):** before a `BotUser` is deleted or anonymised, store their `trust_weight` in a `ReporterTrust(reporter_key, trust_weight)` table. `reputation.service` reads trust from it when `reporter` is null, so an erased low-trust reporter doesn't regain full weight. Never rotate `REPORTER_KEY_SECRET`.
 
 **Acceptance Criteria**:

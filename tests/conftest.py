@@ -33,3 +33,14 @@ def fake_speech():
     stt.reset()
     yield stt
     stt.reset()
+
+
+@pytest.fixture
+def object_store():
+    """The shared InMemoryObjectStore that get_object_store() returns under the "memory" backend."""
+    from tchekam.core.storage import InMemoryObjectStore
+
+    store = InMemoryObjectStore.instance()
+    store.reset()
+    yield store
+    store.reset()

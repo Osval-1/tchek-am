@@ -208,6 +208,162 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "Sorry, something went wrong. Please try again in a moment.",
         "pcm": "Sorry, wahala happen. Try again small time.",  # needs native review
     },
+    "report.instructions": {
+        "fr": (
+            "Signaler une arnaque : envoyez-moi vos preuves, une par message.\n"
+            "• captures d'écran de la discussion avec le vendeur\n"
+            "• capture du SMS MoMo / Orange Money du paiement\n"
+            "• capture de l'annonce du produit\n"
+            "• une note vocale ou un texte qui raconte ce qui s'est passé\n"
+            "Quand vous avez terminé, répondez FINI (ou 1). ANNULER pour arrêter."
+        ),
+        "en": (
+            "Report a scam: send me your evidence, one item per message.\n"
+            "• screenshots of the chat with the seller\n"
+            "• a screenshot of the MoMo / Orange Money payment SMS\n"
+            "• a screenshot of the product post\n"
+            "• a voice note or a text telling what happened\n"
+            "When you have finished, reply DONE (or 1). CANCEL to stop."
+        ),
+        "pcm": (
+            "Report scam: send me your evidence, one by one.\n"
+            "• screenshot of di chat with di seller\n"
+            "• screenshot of di MoMo / Orange Money SMS for di payment\n"
+            "• screenshot of di product post\n"
+            "• voice note or text wey talk wetin happen\n"
+            "When you finish, reply DONE (or 1). CANCEL to stop."
+        ),  # needs native review
+    },
+    "report.count.image_one": {
+        "fr": "1 image",
+        "en": "1 image",
+        "pcm": "1 image",  # needs native review
+    },
+    "report.count.image": {
+        "fr": "{n} images",
+        "en": "{n} images",
+        "pcm": "{n} images",  # needs native review
+    },
+    "report.count.voice_one": {
+        "fr": "1 note vocale",
+        "en": "1 voice note",
+        "pcm": "1 voice note",  # needs native review
+    },
+    "report.count.voice": {
+        "fr": "{n} notes vocales",
+        "en": "{n} voice notes",
+        "pcm": "{n} voice notes",  # needs native review
+    },
+    "report.count.none": {
+        "fr": "aucun fichier",
+        "en": "no files",
+        "pcm": "no file",  # needs native review
+    },
+    "report.ack": {
+        "fr": "✅ Reçu : {items}. Envoyez la suite, ou FINI quand vous avez terminé.",
+        "en": "✅ Received: {items}. Send more, or DONE when you have finished.",
+        "pcm": "✅ I don receive: {items}. Send more, or DONE when you finish.",  # needs native review
+    },
+    "report.story_noted": {
+        "fr": "📝 Noté. Envoyez la suite, ou FINI quand vous avez terminé.",
+        "en": "📝 Noted. Send more, or DONE when you have finished.",
+        "pcm": "📝 I don note am. Send more, or DONE when you finish.",  # needs native review
+    },
+    "report.story_full": {
+        "fr": "Votre récit est déjà long, merci. Envoyez des captures d'écran, ou FINI pour continuer.",
+        "en": "Your account of events is already long, thank you. Send screenshots, or DONE to continue.",
+        "pcm": "Your story don long well, tank you. Send screenshot, or DONE to continue.",  # needs native review
+    },
+    "report.limit_items": {
+        "fr": "Merci, vous avez déjà envoyé 10 fichiers, c'est le maximum. Répondez FINI pour continuer.",
+        "en": "Thank you, you have already sent 10 files, which is the maximum. Reply DONE to continue.",
+        "pcm": "Tank you, you don send 10 files, na di maximum. Reply DONE to continue.",  # needs native review
+    },
+    "report.limit_size": {
+        "fr": "Désolé, ce fichier dépasse la taille totale autorisée (15 Mo). Il n'a pas été ajouté. Répondez FINI pour continuer.",
+        "en": "Sorry, this file goes over the total size allowed (15 MB). It was not added. Reply DONE to continue.",
+        "pcm": "Sorry, dis file pass di total size wey we allow (15 MB). I no add am. Reply DONE to continue.",  # needs native review
+    },
+    "report.file_failed": {
+        "fr": "Désolé, je n'ai pas pu lire ce fichier. Merci de le renvoyer.",
+        "en": "Sorry, I could not read that file. Please send it again.",
+        "pcm": "Sorry, I no fit read dat file. Abeg send am again.",  # needs native review
+    },
+    "report.unsupported_item": {
+        "fr": "Je ne peux pas utiliser ce type de fichier. Envoyez des images, des notes vocales ou du texte.",
+        "en": "I can't use this kind of file. Send images, voice notes or text.",
+        "pcm": "I no fit use dis kind file. Send images, voice notes or text.",  # needs native review
+    },
+    "report.need_one_item": {
+        "fr": "Envoyez au moins une capture d'écran, une note vocale ou un texte avant de répondre FINI.",
+        "en": "Send at least one screenshot, voice note or text before replying DONE.",
+        "pcm": "Send at least one screenshot, voice note or text before you reply DONE.",  # needs native review
+    },
+    "report.still_processing": {
+        "fr": "Je traite encore vos fichiers. Renvoyez FINI dans un instant.",
+        "en": "I'm still processing your files. Send DONE again in a moment.",
+        "pcm": "I still dey work on your files. Send DONE again small time.",  # needs native review
+    },
+    "report.analysing": {
+        "fr": "🔎 J'analyse vos preuves, cela peut prendre une minute…",
+        "en": "🔎 Analysing your evidence, this can take a minute…",
+        "pcm": "🔎 I dey check your evidence, e fit take one minute…",  # needs native review
+    },
+    "report.analysis_wait": {
+        "fr": "J'analyse encore vos preuves. Merci de patienter un instant.",
+        "en": "I'm still analysing your evidence. Please wait a moment.",
+        "pcm": "I still dey check your evidence. Abeg wait small.",  # needs native review
+    },
+    "report.analysis_failed": {
+        "fr": "Désolé, l'analyse n'a pas abouti. Répondez FINI pour réessayer.",
+        "en": "Sorry, the analysis did not finish. Reply DONE to try again.",
+        "pcm": "Sorry, di check no finish. Reply DONE to try again.",  # needs native review
+    },
+    "report.cancelled": {
+        "fr": "Votre signalement est annulé. Tapez 0 pour le menu.",
+        "en": "Your report has been cancelled. Type 0 for the menu.",
+        "pcm": "Your report don cancel. Type 0 for menu.",  # needs native review
+    },
+    "report.ask_details": {
+        "fr": "Je n'ai pas bien compris certains détails. Tapez le numéro du vendeur et le montant payé (exemple : 677123456 25000).",
+        "en": "I couldn't make out some details. Type the seller's number and the amount paid (example: 677123456 25000).",
+        "pcm": "I no understand some details well. Type di seller number and di money wey you pay (example: 677123456 25000).",  # needs native review
+    },
+    "report.ask_details_again": {
+        "fr": "Je ne trouve pas de numéro camerounais valide. Tapez le numéro du vendeur (exemple : 677123456 25000).",
+        "en": "I can't find a valid Cameroonian number. Type the seller's number (example: 677123456 25000).",
+        "pcm": "I no see correct Cameroon number. Type di seller number (example: 677123456 25000).",  # needs native review
+    },
+    "report.resume_choice": {
+        "fr": "Vous avez un signalement commencé ({items}).\n1. Continuer ce signalement\n2. En commencer un nouveau",
+        "en": "You have a report in progress ({items}).\n1. Continue that report\n2. Start a new one",
+        "pcm": "You get one report wey you don start ({items}).\n1. Continue dat report\n2. Start new one",  # needs native review
+    },
+    "report.resumed": {
+        "fr": "D'accord, on continue ({items}). Envoyez la suite, ou FINI quand vous avez terminé.",
+        "en": "OK, let's continue ({items}). Send more, or DONE when you have finished.",
+        "pcm": "OK, make we continue ({items}). Send more, or DONE when you finish.",  # needs native review
+    },
+    "report.summary_neutral": {
+        "fr": "Signalement d'un problème avec un vendeur, avec les preuves jointes.",
+        "en": "Report of a problem with a seller, with the attached evidence.",
+        "pcm": "Report of one wahala with one seller, with di evidence wey dey attached.",  # needs native review
+    },
+    "report.confirm_interim": {
+        "fr": "📋 Voici ce que j'ai compris :\n{summary}\n\nL'étape de confirmation arrive bientôt.",
+        "en": "📋 Here is what I understood:\n{summary}\n\nThe confirmation step is coming soon.",
+        "pcm": "📋 Na wetin I understand be dis:\n{summary}\n\nDi confirmation step dey come soon.",  # needs native review
+    },
+    "report.files_lost_one": {
+        "fr": "Désolé, 1 fichier n'a pas pu être lu. Merci de le renvoyer, puis répondez FINI.",
+        "en": "Sorry, 1 file could not be read. Please resend it, then reply DONE.",
+        "pcm": "Sorry, I no fit read 1 file. Abeg send am again, then reply DONE.",  # needs native review
+    },
+    "report.files_lost": {
+        "fr": "Désolé, {n} fichiers n'ont pas pu être lus. Merci de les renvoyer, puis répondez FINI.",
+        "en": "Sorry, {n} files could not be read. Please resend them, then reply DONE.",
+        "pcm": "Sorry, I no fit read {n} files. Abeg send dem again, then reply DONE.",  # needs native review
+    },
 }
 
 DEFAULT_LANG = "fr"

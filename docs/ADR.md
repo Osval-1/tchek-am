@@ -339,6 +339,30 @@ Date: 2026-11-23 · Status: **Accepted**
 
 ---
 
+## ADR-017: Report flow processing model
+Date: 2026-11-23 · Status: **Accepted**
+
+**Question:** How does the report flow do slow work (downloads, transcription, AI) without holding up the conversation or losing user data? (This came up while building ISSUES.md Issue 11.)
+
+**Decision:**
+- **Handlers stay fast.** Handlers run while the per-user conversation row is locked, so they never download, transcribe or call AI. They queue jobs with `Context.enqueue_after(...)`. The service runs those jobs only after the transaction commits and the replies are delivered, and still runs them if delivery fails.
+- **Messages from jobs** go only through `conversations.outbound.send_to_user`, which never raises and logs only a class name and the user's internal id.
+- **Draft state lives on the report, not in the conversation.** The reporter's text is saved to `Report.story_text` as it arrives, so it survives MENU, language changes and expiry. The conversation keeps only the report id, the step, and a set of pending file ids.
+- **Limits are enforced twice:** a quick check in the handler, and a final check in the ingest job under a lock (conversation, then report), so concurrent files cannot exceed 10 items or 15 MB. Refused files are deleted from storage.
+- **Idempotency:** each stored file is unique per report by the provider's message id; extraction is skipped when a fingerprint of its inputs (evidence ids, hashes, story) is unchanged, and failed results are not reused, so FINI retries them.
+- **Personal data added:** `Report.story_text`, `Report.ai_extraction`, `Evidence.transcript`. All are covered by the retention schedule (ADR-013, Issue 24).
+
+**Recovery guarantees (checked against the code):**
+- A stored file is kept only if its evidence record was created; on every other path it is deleted, and a failure while sending an acknowledgement never affects it.
+- A file job that never reports back blocks DONE for at most 10 minutes, is then re-queued once, and if it is still missing 10 minutes later a further DONE drops it and tells the user how many files to resend; the user stays in collecting, and extraction starts only on the DONE after that.
+- A crashed extraction always ends in a safe state: the user goes back to collecting and is told to send DONE again. A vanished extraction job is re-queued by a DONE sent more than 10 minutes after it started.
+- Unchanged evidence is never sent to the AI twice (input fingerprint), but a stored failure is always retried.
+- **Known gap:** if a slow extraction is still running after 10 minutes and the user sends DONE, the model may be called twice (one handover message, double billing).
+
+**Consequences:** The conversation stays responsive and the user can always recover by sending DONE again. The in-memory object store is now a single shared instance in dev and tests.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

@@ -45,6 +45,10 @@ class Report(models.Model):
     merged_into = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="merged_reports"
     )
+    # Personal data (the reporter's own words): covered by retention (Issue 24), never logged.
+    story_text = models.TextField(blank=True)
+    # Full AI Extraction dump plus "inputs_key", the fingerprint of the evidence it was run on.
+    ai_extraction = models.JSONField(default=dict, blank=True)
     summary_ai = models.TextField(blank=True)
     summary_final = models.TextField(blank=True)
     amount_xaf = models.PositiveIntegerField(null=True, blank=True)
@@ -152,7 +156,18 @@ class Evidence(models.Model):
     tamper_flags = models.JSONField(default=list, blank=True)
     training_opt_in = models.BooleanField(default=False)
     legal_hold = models.BooleanField(default=False)
+    # The WhatsApp message the file came from; makes media ingestion idempotent.
+    source_message_id = models.CharField(max_length=255, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["report", "source_message_id"],
+                condition=~Q(source_message_id=""),
+                name="unique_evidence_per_source_message",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"Evidence#{self.pk} ({self.kind})"

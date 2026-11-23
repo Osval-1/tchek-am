@@ -2,6 +2,7 @@ import logging
 
 from django.utils import timezone
 
+from tchekam.conversations.router import Reply
 from tchekam.conversations.service import handle_private_message
 from tchekam.core.tasks import register
 
@@ -19,12 +20,18 @@ def _handle(msg: InboundMessage) -> None:
         return
     if not msg.sender_phone:
         return
-    channel = get_channel()
-    for reply in handle_private_message(msg):
-        if reply.image_url:
-            channel.send_image(msg.sender_phone, reply.image_url, caption=reply.text)
-        else:
-            channel.send_text(msg.sender_phone, reply.text)
+    to = msg.sender_phone
+
+    def deliver(replies: list[Reply]) -> None:
+        channel = get_channel()
+        for reply in replies:
+            if reply.image_url:
+                channel.send_image(to, reply.image_url, caption=reply.text)
+            else:
+                channel.send_text(to, reply.text)
+
+    # Replies go out first; jobs the handlers queued run after them (see the service).
+    handle_private_message(msg, deliver=deliver)
 
 
 @register("messaging.process_inbound")

@@ -61,6 +61,14 @@ class Context:
     conversation: Conversation
     msg: InboundMessage
     extra: dict[str, Any] = field(default_factory=dict)  # intent arguments, e.g. "numbers"
+    jobs: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
+
+    def enqueue_after(self, name: str, **kwargs: Any) -> None:
+        """Queue a background task to run once this message's transaction has committed.
+
+        Handlers run under the conversation row lock, so slow work (downloads, AI) goes here.
+        """
+        self.jobs.append((name, kwargs))
 
     @property
     def lang(self) -> str | None:
@@ -108,7 +116,7 @@ def start_flow(
     conv.expires_at = timezone.now() + ttl if ttl else None
 
 
-def _normalize(text: str | None) -> str:
+def normalize(text: str | None) -> str:
     """Lower-case, accent-free, punctuation-free, single-spaced."""
     decomposed = unicodedata.normalize("NFKD", text or "")
     stripped = "".join(c for c in decomposed if not unicodedata.combining(c)).casefold()
@@ -145,7 +153,7 @@ def _start_language_picker(ctx: Context) -> list[Reply]:
 
 
 def _language_pick(ctx: Context) -> list[Reply]:
-    choice = LANGUAGES.get(_normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
+    choice = LANGUAGES.get(normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
     if choice is None:
         return say(ctx, "lang.picker")
     ctx.user.language = choice
@@ -163,7 +171,7 @@ def _image_choice(ctx: Context) -> list[Reply]:
     state = ctx.conversation.state
     if ctx.msg.kind == "image":  # a newer image replaces the pending one
         return _ask_image_choice(ctx)
-    choice = _normalize(ctx.msg.text) if ctx.msg.kind == "text" else ""
+    choice = normalize(ctx.msg.text) if ctx.msg.kind == "text" else ""
     intent = {"1": "check_photo", "2": "report"}.get(choice)
     if intent is None:
         return say(ctx, "image.choice")
@@ -208,7 +216,7 @@ def _route_idle(ctx: Context) -> list[Reply]:
     if msg.kind == "contact":
         return say(ctx, "prompt.no_number")
 
-    norm = _normalize(msg.text)
+    norm = normalize(msg.text)
     if not norm:
         return say(ctx, "common.unsupported")
     if norm in MENU_PROMPTS:
@@ -235,7 +243,7 @@ def _route(ctx: Context) -> list[Reply]:
         # Onboarding comes before everything, including commands: no language, no copy.
         return _language_pick(ctx) if conv.flow == "language_pick" else _start_language_picker(ctx)
 
-    command = GLOBAL_COMMANDS.get(_normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
+    command = GLOBAL_COMMANDS.get(normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
     if command == "menu":
         return _show_menu(ctx)
     if command == "lang":

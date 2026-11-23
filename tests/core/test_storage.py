@@ -106,3 +106,12 @@ def test_factory_rejects_unknown_backend(settings):
 
     with pytest.raises(ValueError):
         get_object_store()
+
+
+def test_memory_backend_is_shared_across_factory_calls():
+    # Objects put by one task must be readable by the next, like a real bucket.
+    store = get_object_store()
+    key = store.put(new_key(), b"x", "image/png")
+
+    assert get_object_store().get(key) == b"x"
+    store.delete(key)

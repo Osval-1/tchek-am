@@ -126,6 +126,11 @@ LOGGING = {
 # Per user and local day, across all kinds of check.
 CHECKS_PER_DAY = env.int("CHECKS_PER_DAY", default=30)
 
+# Reports a user may submit per local day (withdrawn ones do not count).
+REPORTS_PER_DAY = env.int("REPORTS_PER_DAY", default=3)
+# Review time quoted to reporters, in hours.
+REVIEW_ETA_HOURS = env.int("REVIEW_ETA_HOURS", default=24)
+
 # AI (Claude): "anthropic" (real API) or "fake" (tests, offline dev).
 AI_BACKEND = env("AI_BACKEND", default="anthropic")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")

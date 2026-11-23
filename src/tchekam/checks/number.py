@@ -13,6 +13,7 @@ from tchekam.conversations.router import Context, Reply, register_intent
 from tchekam.i18n import month_year, t
 from tchekam.identifiers.models import PhoneNumber, get_or_create_phone
 from tchekam.identifiers.names import mask_name
+from tchekam.identifiers.phone import format_cm_number
 from tchekam.reports.models import Report, ReportSubject
 from tchekam.reputation.facts import Band, BandResult
 from tchekam.reputation.service import band_for_phone
@@ -22,11 +23,6 @@ from .models import CheckLog
 
 MAX_NUMBERS = 3
 MAX_NAMES = 3
-
-
-def _format_number(e164: str) -> str:
-    n = e164.removeprefix("+237")
-    return f"+237 {n[:3]} {n[3:5]} {n[5:7]} {n[7:9]}"
 
 
 def _linked_names(e164: str, counted_report_ids: frozenset[int]) -> list[str]:
@@ -88,7 +84,7 @@ def _check_one(ctx: Context, e164: str) -> Reply:
         user=ctx.user, kind=CheckLog.Kind.NUMBER, subject_ref=e164, result_band=result.band.value
     )
 
-    number = _format_number(e164)
+    number = format_cm_number(e164)
     if phone.operator == "Unknown":
         lines = [t("check.number.header_no_operator", lang, number=number)]
     else:

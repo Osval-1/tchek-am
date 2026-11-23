@@ -155,3 +155,13 @@ def test_media_type_key_wins_over_descriptor_field(payload):
     data["data"]["messages"]["message"]["imageMessage"]["type"] = "spoofed"
 
     assert parse_wasender_payload(data).media["type"] == "imageMessage"
+
+
+def test_inbound_text_is_cut_to_the_hard_maximum(payload):
+    raw = payload("private_text_received")
+    raw["data"]["messages"]["messageBody"] = "a" * 9000
+    raw["data"]["messages"]["message"] = {"conversation": "a" * 9000}
+
+    msg = parse_wasender_payload(raw)
+
+    assert msg.text == "a" * 4000

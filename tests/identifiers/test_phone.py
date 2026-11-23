@@ -37,3 +37,9 @@ def test_normalize_returns_e164_for_cameroonian_formats(raw):
 )
 def test_normalize_returns_none_for_invalid_or_foreign(raw):
     assert normalize_cm_number(raw) is None
+
+
+def test_format_cm_number():
+    from tchekam.identifiers.phone import format_cm_number
+
+    assert format_cm_number("+237677123456") == "+237 677 12 34 56"

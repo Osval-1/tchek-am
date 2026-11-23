@@ -1,0 +1,46 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: tchekam
+      POSTGRES_PASSWORD: tchekam
+      POSTGRES_DB: tchekam
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tchekam -d tchekam"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object store for evidence (SeaweedFS replaces MinIO, whose images are gone).
+  # Credentials are fixed dev placeholders in docker/seaweedfs/s3.json (keep in sync with .env.example).
+  s3:
+    image: chrislusf/seaweedfs:4.54
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "8333:8333"
+    volumes:
+      - s3data:/data
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9333/cluster/status || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  s3-init:
+    image: chrislusf/seaweedfs:4.54
+    depends_on:
+      s3:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - echo "s3.bucket.create -name tchekam-evidence" | weed shell -master=s3:9333
+    restart: "no"
+
+volumes:
+  pgdata:
+  s3data:

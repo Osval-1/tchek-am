@@ -15,3 +15,4 @@ staticfiles/
 .idea/
 .vscode/
 .claude/settings.local.json
+.scratch/

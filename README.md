@@ -11,3 +11,19 @@
 - [Idea brief](docs/idea-brief.md): market research and original ideas
 
 Status: pre-MVP, planning.
+
+
+## Getting started
+
+Prerequisites: [uv](https://docs.astral.sh/uv/) (installs Python 3.13 for you) and Docker.
+
+```bash
+docker compose up -d        # Postgres 16 + pgvector, S3 (SeaweedFS, http://localhost:8333)
+cp .env.example .env
+uv sync
+uv run python src/manage.py migrate
+uv run python src/manage.py runserver
+uv run pytest               # needs the db service running
+```
+
+Health check: `GET http://localhost:8000/healthz`.

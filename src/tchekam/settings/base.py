@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     # Before apps that define tasks, so the Procrastinate app is ready when they register.
     "procrastinate.contrib.django",
     "tchekam.core",
+    "tchekam.messaging",
 ]
 
 MIDDLEWARE = [
@@ -75,6 +76,13 @@ S3_SECRET_KEY = env("S3_SECRET_KEY", default="minioadmin")
 S3_REGION = env("S3_REGION", default="us-east-1")
 # Off by default: local SeaweedFS may not support SSE. Prod turns it on.
 S3_SSE = env.bool("S3_SSE", default=False)
+
+# Messaging: "wasender" (real provider) or "fake" (tests, offline dev).
+MESSAGING_CHANNEL = env("MESSAGING_CHANNEL", default="wasender")
+WASENDER_API_KEY = env("WASENDER_API_KEY", default="")
+WASENDER_BASE_URL = env("WASENDER_BASE_URL", default="https://www.wasenderapi.com/api")
+# Empty means the webhook rejects every request (fail closed).
+WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET", default="")
 
 LOGGING = {
     "version": 1,

@@ -1,0 +1,15 @@
+{
+  "event": "messages.upsert",
+  "timestamp": 1633456794,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-OUT-1",
+        "fromMe": true,
+        "remoteJid": "237670000001@s.whatsapp.net"
+      },
+      "messageBody": "Tchek-Am received: Hello bot",
+      "message": {"conversation": "Tchek-Am received: Hello bot"}
+    }
+  }
+}

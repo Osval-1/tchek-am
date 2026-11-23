@@ -1,0 +1,26 @@
+{
+  "event": "messages.received",
+  "timestamp": 1633456793,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-AUD-1",
+        "fromMe": false,
+        "remoteJid": "237670000005@s.whatsapp.net",
+        "cleanedSenderPn": "237670000005"
+      },
+      "message": {
+        "audioMessage": {
+          "url": "https://mmg.whatsapp.net/o1/v/t62/def",
+          "mimetype": "audio/ogg; codecs=opus",
+          "mediaKey": "YXVkaW9rZXk=",
+          "fileSha256": "YXVkaW9zaGE=",
+          "fileLength": "10240",
+          "seconds": 7,
+          "ptt": true
+        }
+      },
+      "messageTimestamp": 1633456793
+    }
+  }
+}

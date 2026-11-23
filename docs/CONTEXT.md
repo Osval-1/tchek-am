@@ -24,3 +24,5 @@ Use these terms consistently in code, copy and docs. Decisions behind them: [ADR
 | **Moderator** | The human who approves or rejects reports and appeals. During the pilot this is the founder alone. |
 | **Channel** | The WhatsApp transport behind `MessagingChannel`: WaSender now, Meta Cloud API later. |
 | **Legal hold** | A flag that suspends retention deletion at the request of the police or a court. |
+| **InboundMessage** | The provider-neutral form of one incoming WhatsApp message (private or group). |
+| **InboundEvent** | One stored raw webhook delivery, keyed by the provider's message id. Status: received / processed / failed / ignored. Kept for 30 days. |

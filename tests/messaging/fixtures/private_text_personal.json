@@ -1,0 +1,16 @@
+{
+  "event": "messages-personal.received",
+  "timestamp": 1633456790,
+  "data": {
+    "messages": {
+      "key": {
+        "id": "MSG-PRIV-2",
+        "fromMe": false,
+        "remoteJid": "237670000002@s.whatsapp.net",
+        "cleanedSenderPn": "237670000002"
+      },
+      "message": {"conversation": "Is this number safe?"},
+      "messageTimestamp": 1633456790
+    }
+  }
+}

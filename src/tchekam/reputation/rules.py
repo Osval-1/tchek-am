@@ -64,6 +64,7 @@ def compute_band(
         last_report_date=max((reference for _, reference in counted), default=None),
         single_report_with_proof=(band == Band.RED and independent < RED_MIN_INDEPENDENT_REPORTERS),
         under_appeal=appeal.under_appeal,
+        counted_report_ids=frozenset(f.report_id for f, _ in counted),
     )
 
 

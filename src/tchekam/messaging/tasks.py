@@ -2,6 +2,7 @@ import logging
 
 from django.utils import timezone
 
+from tchekam.conversations.service import handle_private_message
 from tchekam.core.tasks import register
 
 from . import hooks
@@ -11,16 +12,19 @@ from .parser import parse_wasender_payload
 
 logger = logging.getLogger(__name__)
 
-ECHO_PREFIX = "Tchek-Am received: "
-
 
 def _handle(msg: InboundMessage) -> None:
     if msg.chat_type == "group":
         hooks.on_group_message(msg)
         return
-    # Temporary echo bot; Issue 5 replaces this with the conversation router.
-    if msg.kind == "text" and msg.text and msg.sender_phone:
-        get_channel().send_text(msg.sender_phone, ECHO_PREFIX + msg.text)
+    if not msg.sender_phone:
+        return
+    channel = get_channel()
+    for reply in handle_private_message(msg):
+        if reply.image_url:
+            channel.send_image(msg.sender_phone, reply.image_url, caption=reply.text)
+        else:
+            channel.send_text(msg.sender_phone, reply.text)
 
 
 @register("messaging.process_inbound")

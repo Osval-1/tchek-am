@@ -13,6 +13,7 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("S3_SECRET_KEY", "sk")
     monkeypatch.setenv("WASENDER_WEBHOOK_SECRET", "whsec")
     monkeypatch.setenv("WASENDER_API_KEY", "wk")
+    monkeypatch.setenv("TERMS_URL", "https://example.com/terms")
 
 
 @pytest.fixture
@@ -50,6 +51,7 @@ def test_prod_requires_allowed_hosts(monkeypatch):
         "DATABASE_URL",
         "WASENDER_WEBHOOK_SECRET",
         "WASENDER_API_KEY",
+        "TERMS_URL",
     ],
 )
 def test_prod_requires_infra_settings(monkeypatch, name):

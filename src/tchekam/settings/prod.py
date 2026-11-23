@@ -1,0 +1,19 @@
+from .base import *  # noqa: F403
+from .base import env
+
+DEBUG = False
+# No defaults for these two: prod must fail loudly if they are missing.
+SECRET_KEY = env("SECRET_KEY")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+# Render terminates TLS at its proxy, so trust the forwarded proto header.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
+# Keep the health probe reachable over plain HTTP for the platform's checker.
+SECURE_REDIRECT_EXEMPT = [r"^healthz$"]
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=3600)
+
+# Deliberately off: 1h HSTS while bootstrapping, and subdomain/preload scope is undecided.
+SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]

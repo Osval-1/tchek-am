@@ -22,6 +22,9 @@ INSTALLED_APPS = [
     "tchekam.messaging",
     "tchekam.identifiers",
     "tchekam.conversations",
+    "tchekam.imaging",
+    "tchekam.reports",
+    "tchekam.checks",
 ]
 
 MIDDLEWARE = [

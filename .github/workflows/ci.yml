@@ -23,10 +23,38 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://tchekam:tchekam@localhost:5432/tchekam
+      S3_ENDPOINT_URL: http://localhost:8333
+      S3_BUCKET: tchekam-evidence
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REQUIRED: "1"
     steps:
       - uses: actions/checkout@v4
+      # A step rather than a service container: the s3.json config must be mounted from the checkout.
+      - name: Start SeaweedFS (S3) and create bucket
+        run: |
+          docker run -d --name seaweedfs -p 8333:8333 -p 9333:9333 \
+            -v "$GITHUB_WORKSPACE/docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro" \
+            chrislusf/seaweedfs:4.54 \
+            server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9333/cluster/status >/dev/null; then ready=1; break; fi
+            sleep 2
+          done
+          [ "$ready" = 1 ] || { echo "SeaweedFS master never became ready"; docker logs seaweedfs; exit 1; }
+          echo "s3.bucket.create -name tchekam-evidence" | docker exec -i seaweedfs weed shell -master=localhost:9333
+          # Any HTTP response (even 403) means the S3 gateway is listening.
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null http://localhost:8333; then ready=1; break; fi
+            sleep 2
+          done
+          [ "$ready" = 1 ] || { echo "S3 gateway never became ready"; docker logs seaweedfs; exit 1; }
+          echo "s3.bucket.list" | docker exec -i seaweedfs weed shell -master=localhost:9333 | grep tchekam-evidence
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      # Runs unit and integration tests; the latter hit the SeaweedFS started above.
       - run: uv run pytest

@@ -5,6 +5,11 @@ DEBUG = False
 # No defaults for these two: prod must fail loudly if they are missing.
 SECRET_KEY = env("SECRET_KEY")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+DATABASES = {"default": env.db("DATABASE_URL")}
+S3_ENDPOINT_URL = env("S3_ENDPOINT_URL")
+S3_BUCKET = env("S3_BUCKET")
+S3_ACCESS_KEY = env("S3_ACCESS_KEY")
+S3_SECRET_KEY = env("S3_SECRET_KEY")
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -17,3 +22,6 @@ SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=3600)
 
 # Deliberately off: 1h HSTS while bootstrapping, and subdomain/preload scope is undecided.
 SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
+
+# Evidence must be encrypted at rest in prod; opt out only via env.
+S3_SSE = env.bool("S3_SSE", default=True)

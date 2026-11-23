@@ -27,3 +27,18 @@ uv run pytest               # needs the db service running
 ```
 
 Health check: `GET http://localhost:8000/healthz`.
+
+## Background tasks
+
+Tasks are registered with `tchekam.core.tasks.register("name")` in an app's `tasks.py` and
+enqueued with `tchekam.core.tasks.enqueue("name", **kwargs)` (Procrastinate under the hood;
+set `TASKS_EAGER=True` to run inline, as the test settings do). Run the worker with:
+
+```bash
+uv run python src/manage.py procrastinate worker
+```
+
+## Tests
+
+`uv run pytest` runs everything; S3 contract tests are marked `integration` and skip if the
+S3 endpoint is unreachable. Run only them with `uv run pytest -m integration`.

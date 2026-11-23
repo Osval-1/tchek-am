@@ -16,6 +16,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.admin",
+    # Before apps that define tasks, so the Procrastinate app is ready when they register.
+    "procrastinate.contrib.django",
     "tchekam.core",
 ]
 
@@ -59,3 +61,25 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+# Background tasks: run inline when True (test settings); otherwise deferred to the worker.
+TASKS_EAGER = env.bool("TASKS_EAGER", default=False)
+
+# "s3" or "memory" (tests).
+OBJECT_STORE_BACKEND = env("OBJECT_STORE_BACKEND", default="s3")
+S3_ENDPOINT_URL = env("S3_ENDPOINT_URL", default="http://localhost:8333")
+S3_BUCKET = env("S3_BUCKET", default="tchekam-evidence")
+S3_ACCESS_KEY = env("S3_ACCESS_KEY", default="minioadmin")
+S3_SECRET_KEY = env("S3_SECRET_KEY", default="minioadmin")
+# SeaweedFS ignores the region; R2 accepts "auto" but boto3 SigV4 also accepts it.
+S3_REGION = env("S3_REGION", default="us-east-1")
+# Off by default: local SeaweedFS may not support SSE. Prod turns it on.
+S3_SSE = env.bool("S3_SSE", default=False)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {"redact": {"()": "tchekam.core.RedactingFilter"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "filters": ["redact"]}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+}

@@ -62,6 +62,11 @@ def _envelope(payload: dict) -> dict:
     return data
 
 
+# Hard cap on inbound text, applied here so no handler (story, edits, checks) ever parses an
+# unbounded string. The story itself is capped at the same size in reports.flow.
+MAX_TEXT_CHARS = 4000
+
+
 def _content(message: dict, body: str | None) -> tuple[Kind, str | None, dict | None]:
     """Return (kind, text, media) for the WhatsApp `message` object."""
     if "contactMessage" in message or "contactsArrayMessage" in message:
@@ -116,7 +121,7 @@ def parse_wasender_payload(payload: Any) -> InboundMessage | None:
         chat_type="group" if is_group else "private",
         group_jid=remote_jid if is_group else None,
         kind=kind,
-        text=text,
+        text=text[:MAX_TEXT_CHARS] if text else text,
         media=media,
         timestamp=_timestamp(envelope.get("messageTimestamp"), payload.get("timestamp")),
         raw_event=event,

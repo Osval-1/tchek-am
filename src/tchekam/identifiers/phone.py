@@ -88,3 +88,9 @@ def find_numbers(text: str) -> list[str]:
     for _, number in sorted(found):
         unique.setdefault(number)
     return list(unique)
+
+
+def format_cm_number(e164: str) -> str:
+    """Display form of a Cameroonian E.164 number: "+237 6XX XX XX XX"."""
+    n = e164.removeprefix("+237")
+    return f"+237 {n[:3]} {n[3:5]} {n[5:7]} {n[7:9]}"

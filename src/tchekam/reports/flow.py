@@ -18,6 +18,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -38,6 +39,7 @@ from tchekam.i18n import t
 from tchekam.identifiers.models import get_or_create_phone
 from tchekam.identifiers.phone import normalize_cm_number
 
+from .limits import daily_limit_reached
 from .models import Evidence, Report, ReportSubject
 
 logger = logging.getLogger(__name__)
@@ -45,7 +47,7 @@ logger = logging.getLogger(__name__)
 COLLECT = "report_collect"
 RESUME = "report_resume_choice"
 DETAILS = "report_await_details"
-CONFIRM = "report_confirm"  # handled from Issue 12 on
+CONFIRM = "report_confirm"  # handled in confirm.py
 EXTRACTING = "extracting"  # step of COLLECT while reports.extract runs
 
 REPORT_TTL = timedelta(hours=24)  # from the last activity; after that, resume is offered
@@ -65,7 +67,8 @@ MEDIA_KINDS = frozenset({"image", "audio"})
 MAX_AMOUNT = 2_147_483_647  # PositiveIntegerField
 
 _DIGITS = re.compile(r"\d+")
-_AMOUNT = re.compile(r"(?<!\d)(\d{1,3}(?:[ .,]\d{3})+|\d+)(?!\d)")
+# Digit runs are bounded so int() below can never see thousands of digits.
+_AMOUNT = re.compile(r"(?<!\d)(\d{1,3}(?:[ .,]\d{3}){1,4}|\d{1,15})(?!\d)")
 
 
 # Shared helpers -------------------------------------------------------------------------------
@@ -86,15 +89,15 @@ def item_counts_text(report_id: int, lang: str | None) -> str:
     return ", ".join(parts) or t("report.count.none", lang)
 
 
-def _command(ctx: Context) -> str:
+def user_command(ctx: Context) -> str:
     return normalize(ctx.msg.text) if ctx.msg.kind == "text" else ""
 
 
-def _draft(user: BotUser, report_id: Any) -> Report | None:
+def current_draft(user: BotUser, report_id: Any) -> Report | None:
     return Report.objects.filter(pk=report_id, reporter=user, status=Report.Status.DRAFT).first()
 
 
-def _touch(ctx: Context, report: Report) -> None:
+def touch(ctx: Context, report: Report) -> None:
     """Every step keeps the draft and the conversation alive for another 24 h."""
     now = timezone.now()
     report.last_activity_at = now
@@ -106,13 +109,13 @@ def _enter_collect(conv: Conversation, report_id: int) -> None:
     start_flow(conv, COLLECT, state={"report_id": report_id, "pending": {}}, ttl=REPORT_TTL)
 
 
-def _cancel(ctx: Context, report: Report) -> list[Reply]:
+def cancel(ctx: Context, report: Report) -> list[Reply]:
     report.transition(Report.Status.WITHDRAWN, reason="cancelled by reporter")
     ctx.conversation.reset()
     return say(ctx, "report.cancelled")
 
 
-def _lost_draft(ctx: Context) -> list[Reply]:
+def lost_draft(ctx: Context) -> list[Reply]:
     """The flow points at a report that is no longer a draft: start over."""
     ctx.conversation.reset()
     return _start_report(ctx)
@@ -131,6 +134,8 @@ def _carried_media(ctx: Context) -> dict[str, str] | None:
 
 
 def _start_report(ctx: Context) -> list[Reply]:
+    if daily_limit_reached(ctx.user):  # refuse early, before the user gathers evidence
+        return say(ctx, "report.limit_reached", n=settings.REPORTS_PER_DAY)
     carry = _carried_media(ctx)
     recent = timezone.now() - RESUME_WINDOW
     draft = (
@@ -159,13 +164,13 @@ def _new_report(ctx: Context, carry: dict[str, str] | None) -> list[Reply]:
 def _resume_choice(ctx: Context) -> list[Reply]:
     state = ctx.conversation.state
     carry = state.get("carry")
-    draft = _draft(ctx.user, state.get("report_id"))
+    draft = current_draft(ctx.user, state.get("report_id"))
     if draft is None:
         return _new_report(ctx, carry)
-    choice = _command(ctx)
+    choice = user_command(ctx)
     if choice == "1":
         _enter_collect(ctx.conversation, draft.pk)
-        _touch(ctx, draft)
+        touch(ctx, draft)
         replies = say(ctx, "report.resumed", items=item_counts_text(draft.pk, ctx.lang))
         if carry:
             replies += _accept_media(ctx, draft, carry["message_id"], carry["kind"])
@@ -263,15 +268,15 @@ def _extracting(ctx: Context, report: Report, command: str) -> list[Reply]:
 
 
 def _collect(ctx: Context) -> list[Reply]:
-    report = _draft(ctx.user, ctx.conversation.state.get("report_id"))
+    report = current_draft(ctx.user, ctx.conversation.state.get("report_id"))
     if report is None:
-        return _lost_draft(ctx)
-    command = _command(ctx)
+        return lost_draft(ctx)
+    command = user_command(ctx)
     if command in CANCEL_WORDS:
-        return _cancel(ctx, report)
+        return cancel(ctx, report)
     if ctx.conversation.step == EXTRACTING:
         return _extracting(ctx, report, command)
-    _touch(ctx, report)
+    touch(ctx, report)
     if command in FINISH_WORDS:
         return _finish(ctx, report)
 
@@ -341,12 +346,12 @@ def parse_details(text: str) -> tuple[list[str], int | None]:
 
 def _await_details(ctx: Context) -> list[Reply]:
     state = ctx.conversation.state
-    report = _draft(ctx.user, state.get("report_id"))
+    report = current_draft(ctx.user, state.get("report_id"))
     if report is None:
-        return _lost_draft(ctx)
-    if _command(ctx) in CANCEL_WORDS:
-        return _cancel(ctx, report)
-    _touch(ctx, report)
+        return lost_draft(ctx)
+    if user_command(ctx) in CANCEL_WORDS:
+        return cancel(ctx, report)
+    touch(ctx, report)
     text = ctx.msg.text if ctx.msg.kind == "text" else ""
     numbers, amount = parse_details(text or "")
     if amount is not None:
@@ -355,7 +360,7 @@ def _await_details(ctx: Context) -> list[Reply]:
     if not numbers and not state.get("asked_again"):
         state["asked_again"] = True
         return say(ctx, "report.ask_details_again")
-    # Without a number we carry on anyway; the confirm step (Issue 12) insists on one.
+    # Without a number we carry on anyway; the confirm step insists on one.
     for e164 in numbers[:MAX_TYPED_NUMBERS]:
         ReportSubject.objects.get_or_create(
             report=report,
@@ -371,13 +376,10 @@ def _await_details(ctx: Context) -> list[Reply]:
 
 
 def enter_confirmation(conv: Conversation, report: Report, lang: str | None) -> str:
-    """Move the conversation to the confirm step; returns the message to send.
+    """Move the conversation to the confirm step; returns the message to send."""
+    from . import confirm  # confirm builds on this module, so it is imported late
 
-    Placeholder until Issue 12, which replaces this body and registers the CONFIRM flow.
-    """
-    start_flow(conv, CONFIRM, state={"report_id": report.pk}, ttl=REPORT_TTL)
-    summary = report.summary_ai or t("report.summary_neutral", lang)
-    return t("report.confirm_interim", lang, summary=summary)
+    return confirm.enter(conv, report, lang)
 
 
 def _from_extracting(report: Report, enter: Callable[[Conversation, str | None], str]) -> None:
@@ -434,3 +436,6 @@ def register() -> None:
     register_flow(COLLECT, _collect)
     register_flow(RESUME, _resume_choice)
     register_flow(DETAILS, _await_details)
+    from . import confirm
+
+    confirm.register()

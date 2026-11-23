@@ -352,3 +352,14 @@ def _needs_details(report: Report, extraction: Extraction) -> bool:
     ).exists()
     nothing_found = not extraction.phone_numbers and not extraction.amounts_xaf
     return extraction.extraction_failed or unclear_voice or nothing_found
+
+
+# Link ------------------------------------------------------------------------------------------
+
+
+@register("reports.link")
+def link(report_id: int) -> None:
+    """Find related reports (same number, name, image or text) once a report is submitted.
+
+    A no-op until Issue 16; queued from the submit step so that issue only fills this in.
+    """

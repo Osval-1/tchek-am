@@ -349,11 +349,6 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "Report of a problem with a seller, with the attached evidence.",
         "pcm": "Report of one wahala with one seller, with di evidence wey dey attached.",  # needs native review
     },
-    "report.confirm_interim": {
-        "fr": "📋 Voici ce que j'ai compris :\n{summary}\n\nL'étape de confirmation arrive bientôt.",
-        "en": "📋 Here is what I understood:\n{summary}\n\nThe confirmation step is coming soon.",
-        "pcm": "📋 Na wetin I understand be dis:\n{summary}\n\nDi confirmation step dey come soon.",  # needs native review
-    },
     "report.files_lost_one": {
         "fr": "Désolé, 1 fichier n'a pas pu être lu. Merci de le renvoyer, puis répondez FINI.",
         "en": "Sorry, 1 file could not be read. Please resend it, then reply DONE.",
@@ -363,6 +358,137 @@ CATALOG: dict[str, dict[str, str]] = {
         "fr": "Désolé, {n} fichiers n'ont pas pu être lus. Merci de les renvoyer, puis répondez FINI.",
         "en": "Sorry, {n} files could not be read. Please resend them, then reply DONE.",
         "pcm": "Sorry, I no fit read {n} files. Abeg send dem again, then reply DONE.",  # needs native review
+    },
+    "report.confirm.list": {
+        "fr": (
+            "📋 Voici ce que j'ai compris. Vérifiez :\n"
+            "1. Numéro(s) du vendeur : {sellers}\n"
+            "2. Nom(s) MoMo / Orange Money : {payees}\n"
+            "3. Montant : {amount}\n"
+            "4. Date : {date}\n"
+            "5. Résumé : {summary}\n"
+            "Fichiers reçus : {items}\n\n"
+            "Répondez OK pour confirmer, ou « numéro nouvelle valeur » pour corriger "
+            "(exemple : 1 677123456). ANNULER pour annuler, 0 pour le menu (le brouillon est gardé)."
+        ),
+        "en": (
+            "📋 Here is what I understood. Please check:\n"
+            "1. Seller number(s): {sellers}\n"
+            "2. MoMo / Orange Money name(s): {payees}\n"
+            "3. Amount: {amount}\n"
+            "4. Date: {date}\n"
+            "5. Summary: {summary}\n"
+            "Files received: {items}\n\n"
+            'Reply OK to confirm, or "number new value" to change a line '
+            "(example: 1 677123456). CANCEL to cancel, 0 for the menu (your draft is kept)."
+        ),
+        "pcm": (
+            "📋 Na wetin I understand be dis. Abeg check am:\n"
+            "1. Seller number(s): {sellers}\n"
+            "2. MoMo / Orange Money name(s): {payees}\n"
+            "3. Money: {amount}\n"
+            "4. Date: {date}\n"
+            "5. Summary: {summary}\n"
+            "Files wey I receive: {items}\n\n"
+            'Reply OK to confirm, or "number new value" to change one line '
+            "(example: 1 677123456). CANCEL to stop, 0 for menu (I go keep your draft)."
+        ),  # needs native review
+    },
+    "report.confirm.help": {
+        "fr": "Je n'ai pas compris. Répondez OK, ou « numéro nouvelle valeur » avec un numéro de 1 à 5 (exemple : 3 25000). Un tiret efface les champs 2 à 4 (exemple : 4 -).",
+        "en": 'I did not understand. Reply OK, or "number new value" with a number from 1 to 5 (example: 3 25000). A dash clears fields 2 to 4 (example: 4 -).',
+        "pcm": 'I no understand. Reply OK, or "number new value" with number from 1 to 5 (example: 3 25000). Dash go clear fields 2 to 4 (example: 4 -).',  # needs native review
+    },
+    "report.confirm.bad_number": {
+        "fr": "Je ne trouve pas de numéro camerounais valide. Exemple : 1 677123456 (jusqu'à 3 numéros).",
+        "en": "I can't find a valid Cameroonian number. Example: 1 677123456 (up to 3 numbers).",
+        "pcm": "I no see correct Cameroon number. Example: 1 677123456 (up to 3 numbers).",  # needs native review
+    },
+    "report.confirm.bad_name": {
+        "fr": "Je n'ai pas pu lire ce nom (60 caractères maximum chacun). Exemple : 2 Jean Dupont, Marie Ngo. Tapez 2 - pour effacer.",
+        "en": "I could not read that name (60 characters at most each). Example: 2 Jean Dupont, Marie Ngo. Type 2 - to clear it.",
+        "pcm": "I no fit read dat name (60 letters at most for each). Example: 2 Jean Dupont, Marie Ngo. Type 2 - to clear am.",  # needs native review
+    },
+    "report.confirm.bad_amount": {
+        "fr": "Montant non valide. Exemple : 3 25000 (en FCFA, au maximum 100 000 000). Tapez 3 - pour effacer.",
+        "en": "That amount is not valid. Example: 3 25000 (in FCFA, 100,000,000 at most). Type 3 - to clear it.",
+        "pcm": "Dat amount no correct. Example: 3 25000 (for FCFA, 100,000,000 at most). Type 3 - to clear am.",  # needs native review
+    },
+    "report.confirm.bad_date": {
+        "fr": "Date non valide (pas dans le futur, pas plus de 5 ans). Exemples : 4 20/11/2026 ou 4 12 mars 2026. Tapez 4 - pour effacer.",
+        "en": "That date is not valid (not in the future, not older than 5 years). Examples: 4 20/11/2026 or 4 12 March 2026. Type 4 - to clear it.",
+        "pcm": "Dat date no correct (no future date, no pass 5 years). Examples: 4 20/11/2026 or 4 12 March 2026. Type 4 - to clear am.",  # needs native review
+    },
+    "report.confirm.bad_summary": {
+        "fr": "Le résumé doit faire entre 1 et 500 caractères. Exemple : 5 J'ai payé le téléphone mais il n'a jamais été livré.",
+        "en": "The summary must be between 1 and 500 characters. Example: 5 I paid for the phone but it was never delivered.",
+        "pcm": "Di summary must be 1 to 500 letters. Example: 5 I pay for di phone but dem never deliver am.",  # needs native review
+    },
+    "report.confirm.need_seller": {
+        "fr": "Il me faut au moins un numéro de vendeur valide pour envoyer le signalement. Tapez le numéro après « 1 » (exemple : 1 677123456).",
+        "en": 'I need at least one valid seller number to send the report. Type the number after "1" (example: 1 677123456).',
+        "pcm": 'I need at least one correct seller number to send di report. Type di number after "1" (example: 1 677123456).',  # needs native review
+    },
+    # legal review: wording must be checked by the lawyer
+    "report.false_warning": {
+        "fr": "Attention : un signalement sciemment faux peut constituer une infraction et donner lieu à des poursuites.",
+        "en": "Warning: knowingly false reports can be an offence and lead to legal action.",
+        "pcm": "Warning: if person knowingly send false report, e fit be offence and e fit lead to legal action.",  # needs native review
+    },
+    "report.consent.terms": {
+        "fr": (
+            "Avant d'envoyer, merci de confirmer :\n"
+            "• ce que je déclare est vrai, à ma connaissance ;\n"
+            "• mes preuves sont examinées par le modérateur de Tchek-Am et traitées par des "
+            "prestataires techniques (analyse par IA et transcription des notes vocales) qui "
+            "agissent pour le compte de Tchek-Am ;\n"
+            "• elles ne sont jamais montrées aux acheteurs et mon identité n'est jamais rendue "
+            "publique.\n\n"
+            "{warning}\n\n"
+            "Conditions complètes : {url}\n\n"
+            "1 = j'accepte, 2 = j'annule"
+        ),
+        "en": (
+            "Before sending, please confirm:\n"
+            "• what I say is true to the best of my knowledge;\n"
+            "• my evidence is reviewed by the Tchek-Am moderator and processed by technical "
+            "service providers (AI analysis and voice-note transcription) that handle it on "
+            "Tchek-Am's behalf;\n"
+            "• it is never shown to buyers and my identity is never made public.\n\n"
+            "{warning}\n\n"
+            "Full terms: {url}\n\n"
+            "1 = I agree, 2 = cancel"
+        ),
+        "pcm": (
+            "Before I send am, abeg confirm:\n"
+            "• wetin I talk na true as far as I know;\n"
+            "• Tchek-Am moderator go check my evidence, and technical service providers "
+            "(AI analysis and voice-note transcription) go handle am for Tchek-Am;\n"
+            "• dem no go ever show am to buyers, and dem no go ever show my identity to people.\n\n"
+            "{warning}\n\n"
+            "Full terms: {url}\n\n"
+            "1 = I agree, 2 = cancel"
+        ),  # needs native review
+    },
+    "report.consent.declined": {
+        "fr": "Pas de problème, rien n'est envoyé et votre signalement est annulé. Merci de votre temps. Tapez 0 pour le menu.",
+        "en": "No problem, nothing is sent and your report is cancelled. Thank you for your time. Type 0 for the menu.",
+        "pcm": "No wahala, we no send anything and your report don cancel. Thank you for your time. Type 0 for menu.",  # needs native review
+    },
+    "report.optin.ask": {
+        "fr": "Pouvons-nous utiliser vos notes vocales et vos corrections pour améliorer la reconnaissance vocale ? C'est indépendant de votre signalement.\n1 = oui, 2 = non",
+        "en": "May we use your voice notes and your corrections to improve speech recognition? This is separate from your report.\n1 = yes, 2 = no",
+        "pcm": "We fit use your voice notes and your corrections to make speech recognition better? Dis one no concern your report.\n1 = yes, 2 = no",  # needs native review
+    },
+    "report.limit_reached": {
+        "fr": "Vous avez atteint la limite de {n} signalements par jour. Merci de réessayer demain.",
+        "en": "You have reached the limit of {n} reports per day. Please try again tomorrow.",
+        "pcm": "You don reach di limit of {n} reports for one day. Abeg try again tomorrow.",  # needs native review
+    },
+    "report.submitted": {
+        "fr": "✅ Merci, votre signalement est enregistré. Référence : {reference}\nIl attend la relecture du modérateur (en général sous {hours} h). Nous vous écrirons ici dès qu'il y aura une décision.",
+        "en": "✅ Thank you, your report is recorded. Reference: {reference}\nIt is waiting for review by the moderator (usually within {hours} hours). We will message you here as soon as there is an outcome.",
+        "pcm": "✅ Thank you, your report don enter. Reference: {reference}\nE dey wait for moderator to check am (usually inside {hours} hours). We go message you here when decision dey.",  # needs native review
     },
 }
 

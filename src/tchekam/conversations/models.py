@@ -14,6 +14,8 @@ class BotUser(models.Model):
     trust_weight = models.FloatField(default=1.0)
     blocked = models.BooleanField(default=False)
     training_opt_in = models.BooleanField(default=False)
+    # The opt-in question is asked once; False here means "not decided yet", not "no".
+    training_opt_in_asked = models.BooleanField(default=False)
     # Stamped on every inbound message; reminders and retention jobs key off it.
     last_inbound_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

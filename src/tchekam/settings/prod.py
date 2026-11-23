@@ -18,6 +18,8 @@ TERMS_URL = env("TERMS_URL")
 REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
 # Extraction and classification need Claude; an empty key would fail every call silently.
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
+# Voice notes need Whisper; an empty key would turn every transcription into a silent failure.
+GROQ_API_KEY = env("GROQ_API_KEY")
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

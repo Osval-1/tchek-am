@@ -22,3 +22,14 @@ def fake_llm():
     client.reset()
     yield client
     client.reset()
+
+
+@pytest.fixture
+def fake_speech():
+    """The FakeSpeechToText singleton behind get_speech_to_text() when SPEECH_BACKEND="fake"."""
+    from tchekam.speech.fake import FakeSpeechToText
+
+    stt = FakeSpeechToText.instance()
+    stt.reset()
+    yield stt
+    stt.reset()

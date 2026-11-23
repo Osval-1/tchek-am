@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "tchekam.reputation",
     "tchekam.checks",
     "tchekam.ai",
+    "tchekam.speech",
 ]
 
 MIDDLEWARE = [
@@ -114,6 +115,12 @@ LOGGING = {
     "filters": {"redact": {"()": "tchekam.core.RedactingFilter"}},
     "handlers": {"console": {"class": "logging.StreamHandler", "filters": ["redact"]}},
     "root": {"handlers": ["console"], "level": "INFO"},
+    # httpx logs every request URL at INFO, and URLs can carry message ids (WaSender media).
+    "loggers": {
+        "httpx": {"level": "WARNING"},
+        "httpx2": {"level": "WARNING"},
+        "httpcore": {"level": "WARNING"},
+    },
 }
 
 # Per user and local day, across all kinds of check.
@@ -127,3 +134,9 @@ AI_MODEL_FAST = env("AI_MODEL_FAST", default="claude-haiku-5-5")
 AI_MODEL_VISION = env("AI_MODEL_VISION", default="claude-sonnet-5-5")
 # Server-side refusal fallback on extraction calls (Sonnet only; Haiku has none).
 AI_REFUSAL_FALLBACK = env.bool("AI_REFUSAL_FALLBACK", default=True)
+
+# Speech-to-text: "groq" (Whisper API) or "fake" (tests, offline dev).
+SPEECH_BACKEND = env("SPEECH_BACKEND", default="groq")
+GROQ_API_KEY = env("GROQ_API_KEY", default="")
+GROQ_BASE_URL = env("GROQ_BASE_URL", default="https://api.groq.com/openai/v1")
+SPEECH_MODEL = env("SPEECH_MODEL", default="whisper-large-v3")

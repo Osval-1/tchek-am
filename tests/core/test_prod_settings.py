@@ -16,6 +16,7 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("TERMS_URL", "https://example.com/terms")
     monkeypatch.setenv("REPORTER_KEY_SECRET", "rk" * 32)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "ak-test")
+    monkeypatch.setenv("GROQ_API_KEY", "gk-test")
 
 
 @pytest.fixture
@@ -62,6 +63,7 @@ def test_prod_requires_allowed_hosts(monkeypatch):
         "TERMS_URL",
         "REPORTER_KEY_SECRET",
         "ANTHROPIC_API_KEY",
+        "GROQ_API_KEY",
     ],
 )
 def test_prod_requires_infra_settings(monkeypatch, name):

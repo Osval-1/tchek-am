@@ -113,6 +113,96 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "I can't read this kind of message. Type 0 for the menu.",
         "pcm": "I no fit read dis kind message. Type 0 for menu.",  # needs native review
     },
+    "check.number.header": {
+        "fr": "📞 {number} ({operator})",
+        "en": "📞 {number} ({operator})",
+        "pcm": "📞 {number} ({operator})",  # needs native review
+    },
+    "check.number.header_no_operator": {
+        "fr": "📞 {number}",
+        "en": "📞 {number}",
+        "pcm": "📞 {number}",  # needs native review
+    },
+    "check.number.green": {
+        "fr": "🟢 Aucun signalement pour ce numéro.\nCela ne prouve pas que le vendeur est honnête.",
+        "en": "🟢 No reports for this number.\nThat doesn't prove the seller is honest.",
+        "pcm": "🟢 No report dey for dis number.\nDat no mean say di seller dey honest.",  # needs native review
+    },
+    "check.number.yellow_one": {
+        "fr": "🟡 1 signalement en attente de vérification.",
+        "en": "🟡 1 report waiting for review.",
+        "pcm": "🟡 1 report dey wait for review.",  # needs native review
+    },
+    "check.number.yellow": {
+        "fr": "🟡 {n} signalements en attente de vérification.",
+        "en": "🟡 {n} reports waiting for review.",
+        "pcm": "🟡 {n} reports dey wait for review.",  # needs native review
+    },
+    "check.number.orange_one": {
+        "fr": "🟠 Signalé par 1 personne, preuves examinées. Pas assez pour un avertissement de risque élevé. Soyez prudent.",
+        "en": "🟠 Reported by 1 person, evidence reviewed. Not enough for a high-risk warning. Be careful.",
+        "pcm": "🟠 1 person report am, we don check di evidence. E no reach high-risk warning. Be careful.",  # needs native review
+    },
+    "check.number.orange": {
+        "fr": "🟠 Signalé par {k} personnes, preuves examinées. Pas assez pour un avertissement de risque élevé. Soyez prudent.",
+        "en": "🟠 Reported by {k} people, evidence reviewed. Not enough for a high-risk warning. Be careful.",
+        "pcm": "🟠 {k} people report am, we don check di evidence. E no reach high-risk warning. Be careful.",  # needs native review
+    },
+    "check.number.orange_reviewed": {
+        "fr": "🟠 Des signalements examinés existent. Pas assez pour un avertissement de risque élevé. Soyez prudent.",
+        "en": "🟠 Reviewed reports exist. Not enough for a high-risk warning. Be careful.",
+        "pcm": "🟠 Reviewed reports dey. E no reach high-risk warning. Be careful.",  # needs native review
+    },
+    "check.number.red": {
+        "fr": "🔴 Risque élevé : signalé par {k} personnes différentes. Preuves examinées.",
+        "en": "🔴 High risk: reported by {k} different people. Evidence reviewed.",
+        "pcm": "🔴 High risk: {k} different people report am. We don check di evidence.",  # needs native review
+    },
+    "check.number.red_proof": {
+        "fr": "🔴 Risque élevé : 1 signalement examiné avec preuve de paiement.",
+        "en": "🔴 High risk: 1 reviewed report with payment proof.",
+        "pcm": "🔴 High risk: 1 reviewed report wey get payment proof.",  # needs native review
+    },
+    "check.number.last_report": {
+        "fr": "Dernier signalement : {when}",
+        "en": "Last report: {when}",
+        "pcm": "Last report: {when}",  # needs native review
+    },
+    "check.number.under_appeal": {
+        "fr": "⚖️ En cours de contestation : le titulaire de ce numéro conteste les signalements.",
+        "en": "⚖️ Under appeal: the owner of this number is contesting the reports.",
+        "pcm": "⚖️ Appeal dey: di owner of dis number dey contest di reports.",  # needs native review
+    },
+    "check.number.names": {
+        "fr": "Noms vus sur des paiements : {names}",
+        "en": "Names seen on payments: {names}",
+        "pcm": "Names wey show for payments: {names}",  # needs native review
+    },
+    "check.number.checked_times": {
+        "fr": "Vérifié {n} fois ce mois-ci.",
+        "en": "Checked {n} times this month.",
+        "pcm": "Dem don check am {n} times dis month.",  # needs native review
+    },
+    "check.number.tips": {
+        "fr": "Conseils : préférez le paiement à la livraison, rencontrez-vous dans un lieu public, et vérifiez que le nom affiché sur MoMo/OM correspond au vendeur.",
+        "en": "Tips: prefer cash on delivery, meet in a public place, and check that the name shown on MoMo/OM matches the seller.",
+        "pcm": "Tips: better pay when dem deliver, meet for public place, and check say di name wey show for MoMo/OM na di seller own.",  # needs native review
+    },
+    "check.number.footer": {
+        "fr": "Pour signaler ce numéro : répondez 4. Si c'est votre numéro et que vous n'êtes pas d'accord : répondez CONTESTER.",
+        "en": "To report this number: reply 4. If this is your number and you disagree: reply APPEAL.",
+        "pcm": "To report dis number: reply 4. If na your number and you no agree: reply APPEAL.",  # needs native review
+    },
+    "check.number.too_many": {
+        "fr": "Vous avez envoyé plus de 3 numéros : j'ai vérifié les 3 premiers.",
+        "en": "You sent more than 3 numbers: I checked the first 3.",
+        "pcm": "You send more than 3 numbers: I check di first 3.",  # needs native review
+    },
+    "check.limit_reached": {
+        "fr": "Vous avez atteint la limite de vérifications pour aujourd'hui. Revenez demain, merci de votre patience.",
+        "en": "You've reached today's limit of checks. Please come back tomorrow, and thank you for your patience.",
+        "pcm": "You don reach di limit of checks for today. Abeg come back tomorrow, tank you for patience.",  # needs native review
+    },
     "error.generic": {
         "fr": "Désolé, un problème est survenu. Réessayez dans un instant.",
         "en": "Sorry, something went wrong. Please try again in a moment.",

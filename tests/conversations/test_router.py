@@ -136,7 +136,7 @@ def test_idle_routing(user, calls, kwargs, intent, extra):
     if extra is not None:
         assert calls[0][1] == extra
     else:
-        assert len(calls[0][1]["numbers"]) == 3
+        assert len(calls[0][1]["numbers"]) == 4  # the handler applies its own cap
 
 
 def test_image_asks_choice_and_stores_pending(user, calls):

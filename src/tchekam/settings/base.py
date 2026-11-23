@@ -114,3 +114,6 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler", "filters": ["redact"]}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# Per user and local day, across all kinds of check.
+CHECKS_PER_DAY = env.int("CHECKS_PER_DAY", default=30)

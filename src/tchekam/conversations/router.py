@@ -20,7 +20,7 @@ from tchekam.messaging.channel import InboundMessage
 
 from .models import BotUser, Conversation
 
-MAX_NUMBERS = 3
+MAX_NUMBERS = 10  # the check handler decides how many it actually checks
 # Keywords only count in short messages, so a pasted message that mentions "scam" is still checked.
 # Verbs state an intent ("je veux signaler une arnaque"), so they get a longer allowance than
 # the bare nouns, which also appear in pasted scam messages.

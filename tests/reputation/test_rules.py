@@ -296,3 +296,15 @@ def test_under_appeal_passes_through():
 
 def test_appeal_defaults_to_no_appeal():
     assert compute_band([approved(1)], NOW).under_appeal is False
+
+
+def test_counted_report_ids_exclude_decayed_pre_acquisition_and_non_approved():
+    counted = approved(1, 10, incident_date=date_ago(20))
+    decayed = approved(2, 10, incident_date=date_ago(VISIBLE_DAYS + 5))
+    old_owner = approved(3, 10, incident_date=date_ago(100))
+    pending = report(4, "pending")
+    appeal = AppealState(under_appeal=False, number_acquired_at=date_ago(50))
+
+    result = compute_band([counted, decayed, old_owner, pending], NOW, appeal)
+
+    assert result.counted_report_ids == frozenset({1})

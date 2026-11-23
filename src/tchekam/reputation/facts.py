@@ -55,3 +55,6 @@ class BandResult:
     last_report_date: date | None  # newest age reference among counted approved reports
     single_report_with_proof: bool  # red reached through payment proof, not 3 reporters
     under_appeal: bool
+    # The approved reports behind the counts (after decay and appeal exclusion), for callers
+    # that must show details from exactly those reports and no others.
+    counted_report_ids: frozenset[int] = frozenset()

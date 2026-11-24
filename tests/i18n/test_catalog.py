@@ -50,7 +50,9 @@ def test_banned_regex_catches_and_spares():
 
 
 def test_every_pidgin_value_is_marked_for_native_review():
-    source = Path(catalog.__file__).read_text(encoding="utf-8")
+    # Copy may live in catalog.py or in a catalog_*.py file merged into it.
+    files = Path(catalog.__file__).parent.glob("catalog*.py")
+    source = "\n".join(p.read_text(encoding="utf-8") for p in files)
     marked = [ln for ln in source.splitlines() if ln.endswith("# needs native review")]
     assert len(marked) == len(catalog.CATALOG)
 

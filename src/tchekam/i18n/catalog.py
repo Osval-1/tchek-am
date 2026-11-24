@@ -4,6 +4,8 @@ Copy rules: never label a person as a scammer or fraudster (see tests/i18n/test_
 Each pcm entry must carry a trailing "# needs native review" marker, enforced by a test.
 """
 
+from .catalog_message import MESSAGE_CHECK_COPY
+
 _PICKER = "Choisissez votre langue / Choose your language / Pick your language:\n1. Français\n2. English\n3. Pidgin"
 
 CATALOG: dict[str, dict[str, str]] = {
@@ -652,6 +654,8 @@ CATALOG: dict[str, dict[str, str]] = {
         "pcm": "Dis report no dey wait for more information again. Type 0 for menu.",  # needs native review
     },
 }
+
+CATALOG.update(MESSAGE_CHECK_COPY)
 
 DEFAULT_LANG = "fr"
 

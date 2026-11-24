@@ -126,3 +126,15 @@ def handle_check_number(ctx: Context) -> list[Reply]:
 
 def register() -> None:
     register_intent("check_number", handle_check_number)
+
+
+def band_summary(e164: str, lang: str | None) -> str:
+    """Number, band line(s) and the way to contest it; no log, names or tips (for other checks)."""
+    result = band_for_phone(e164)
+    lines = [format_cm_number(e164)] + _band_lines(result, lang)
+    if result.band != Band.GREEN:
+        # R7: anyone shown a flagged or pending band must be told it can be contested.
+        if result.under_appeal:
+            lines.append(t("check.number.under_appeal", lang))
+        lines.append(t("check.message.contest", lang))
+    return "\n".join(lines)

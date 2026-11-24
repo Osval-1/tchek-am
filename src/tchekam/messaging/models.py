@@ -3,6 +3,7 @@ from typing import Any
 from django.db import models
 
 from .channel import InboundMessage
+from .parser import scrubbed_group_payload
 
 
 class InboundEvent(models.Model):
@@ -40,6 +41,21 @@ class InboundEvent(models.Model):
         return cls.objects.get_or_create(
             message_id=msg.message_id, defaults={"event": msg.raw_event, "payload": payload}
         )
+
+    def scrub_group_payload(self) -> bool:
+        """Drop the poster and media pointers of a group event that will not be ingested."""
+        scrubbed = scrubbed_group_payload(self.payload)
+        if scrubbed is None:
+            return False
+        self.payload = scrubbed
+        self.save(update_fields=["payload"])
+        return True
+
+    @classmethod
+    def scrub_group(cls, message_id: str) -> None:
+        event = cls.objects.filter(message_id=message_id).first()
+        if event is not None:
+            event.scrub_group_payload()
 
 
 class ChannelState(models.Model):

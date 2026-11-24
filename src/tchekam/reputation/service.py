@@ -3,6 +3,7 @@
 Expiry is what makes decay happen without new events: a cached band is at most an hour stale.
 """
 
+from collections.abc import Mapping
 from datetime import datetime
 
 from django.core.cache import cache
@@ -12,7 +13,7 @@ from django.utils import timezone
 from tchekam.reports.keys import reporter_key_for
 from tchekam.reports.models import Evidence, Report, ReportSubject
 
-from . import appeals_hook
+from . import appeals_hook, trust_hook
 from .facts import BandResult, ReportFacts
 from .rules import compute_band
 
@@ -48,7 +49,10 @@ def invalidate_report(report: Report) -> None:
 
 
 def _compute(e164: str, now: datetime) -> BandResult:
-    facts = [_facts(r) for r in _reports_naming(e164)]
+    reports = list(_reports_naming(e164))
+    erased = frozenset(r.reporter_key for r in reports if r.reporter is None and r.reporter_key)
+    surviving = trust_hook.erased_trust(erased) if erased else {}
+    facts = [_facts(r, surviving) for r in reports]
     # Local time so ages are counted in Cameroonian calendar days.
     return compute_band(facts, timezone.localtime(now), appeals_hook.get_appeal_state(e164))
 
@@ -74,12 +78,12 @@ def _reports_naming(e164: str) -> QuerySet[Report]:
     )
 
 
-# An erased reporter's real trust is gone (Issue 24 will keep it). Treat them as below the
-# floor: losing information about a reporter must never make a band worse.
+# An erased reporter with no surviving trust record (ReporterTrust, Issue 24) is treated as
+# below the floor: losing information about a reporter must never make a band worse.
 ERASED_REPORTER_TRUST = 0.0
 
 
-def _facts(r: Report) -> ReportFacts:
+def _facts(r: Report, surviving: Mapping[str, float]) -> ReportFacts:
     reporter = r.reporter
     # Every phone subject, confirmed or not: for independence, an unconfirmed mention of
     # another reporter's number is still a reason to doubt that they are independent. (The
@@ -90,7 +94,11 @@ def _facts(r: Report) -> ReportFacts:
         status=r.status,
         reporter_key=r.reporter_key,
         reporter_phone=reporter.wa_phone if reporter else None,
-        reporter_trust=reporter.trust_weight if reporter else ERASED_REPORTER_TRUST,
+        reporter_trust=(
+            reporter.trust_weight
+            if reporter
+            else surviving.get(r.reporter_key, ERASED_REPORTER_TRUST)
+        ),
         submitted_at=r.submitted_at,
         decided_at=r.decided_at,
         incident_date=r.incident_date,

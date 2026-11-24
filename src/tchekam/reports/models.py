@@ -63,6 +63,12 @@ class Report(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_activity_at = models.DateTimeField(default=timezone.now)
     legal_hold = models.BooleanField(default=False)
+    # Set by retention (Issue 24, ADR-022) when evidence and personal fields were deleted:
+    # rejected reports after 90 days, approved reports after 36 months. Never reopened then.
+    minimised_at = models.DateTimeField(null=True, blank=True)
+    # What a minimised rejected report keeps of its subjects: reporter_key_for() of each
+    # phone subject (HMAC, not reversible without REPORTER_KEY_SECRET).
+    subject_phone_keys = models.JSONField(default=list, blank=True)
 
     class Meta:
         constraints = [
@@ -108,6 +114,8 @@ class Report(models.Model):
                 if target is None or target.status not in MERGE_TARGET_STATUSES:
                     raise InvalidTransition("merge target must be pending, needs_info or approved")
             check_transition(old, to)
+            if row.minimised_at is not None and to == self.Status.PENDING:
+                raise InvalidTransition("evidence was deleted by retention; cannot reopen")
             now = timezone.now()
             row.status = to
             if to == self.Status.PENDING and row.submitted_at is None:

@@ -186,7 +186,8 @@ def test_blocked_user_can_still_opt_out(make_partner_group, object_store):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("text", ["menu", "LANG", "STOP TRAINING", "4", "677123456", "hello"])
+# STOP TRAINING is a data-protection command too (tests/retention/test_training.py).
+@pytest.mark.parametrize("text", ["menu", "LANG", "4", "677123456", "hello"])
 def test_blocked_user_gets_nothing_for_anything_else(fake_channel, text):
     user = BotUser.objects.create(wa_phone=POSTER, language="en", blocked=True)
 

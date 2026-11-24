@@ -1,12 +1,14 @@
 from django.contrib import admin
 
+from tchekam.retention.hold import LegalHoldAdminMixin
+
 from .models import Evidence, ModerationDecision, Report, ReportLink, ReportSubject
 
 
 @admin.register(Report)
-class ReportAdmin(admin.ModelAdmin):
-    list_display = ("id", "reference", "status", "scam_type", "submitted_at")
-    list_filter = ("status", "scam_type")
+class ReportAdmin(LegalHoldAdminMixin, admin.ModelAdmin):
+    list_display = ("id", "reference", "status", "scam_type", "submitted_at", "legal_hold")
+    list_filter = ("status", "scam_type", "legal_hold")
     # Status changes go through Report.transition (review page, Issue 13), never a form edit.
     readonly_fields = (
         "status",

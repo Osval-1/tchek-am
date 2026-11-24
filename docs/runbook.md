@@ -55,3 +55,13 @@ Render Postgres PITR, monthly `pg_dump` to R2.
 ## TODO (Issue 25): keys and secrets
 
 `REPORTER_KEY_SECRET` (never rotate, see ADR-013), `SECRET_KEY` (rotation resets login counters), R2 server-side encryption (`S3_SSE`), rotating the WaSender keys.
+
+## Retention
+
+The nightly job `retention.run` (02:00 Africa/Douala, on the `default` queue) applies the retention schedule (ADR-013, ADR-022) and writes one `retention.run` audit row with a count per rule and the class name of any rule that failed.
+
+- See what is due without changing anything: `uv run python src/manage.py run_retention --dry-run` (prints one `rule: count` line per rule; writes no audit row).
+- Run it now: `uv run python src/manage.py run_retention`. Safe to repeat: every rule is idempotent and works in batches.
+- A rule that failed is listed under `errors` in the audit row and in the worker log (class name only); the other rules still ran, and the next night retries it.
+- Legal hold (police or court request): in the admin, select the report, the number (Phone numbers) or the user (Bot users, searched by exact number) and use "Place on legal hold" (superusers, or staff given the `retention | Can place or release a legal hold` permission). Nothing about it is deleted until "Release legal hold". Both are audit-logged. A held user cannot be deleted.
+- Never rotate `REPORTER_KEY_SECRET`: reporter identities, the trust kept after erasure and the subject references of old rejected reports are keyed by it.

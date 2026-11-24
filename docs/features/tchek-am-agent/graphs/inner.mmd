@@ -1,0 +1,21 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	model(model)
+	tools(tools<hr/><small><em>__tools = check_number, check_message, what_to_do_next, explain_scam_pattern, check_account_name, check_photo, read_image, report_status, start_report, start_appeal, set_language</em></small>)
+	EnforcementMiddleware\2ebefore_model(EnforcementMiddleware.before_model)
+	__end__([<p>__end__</p>]):::last
+	EnforcementMiddleware\2ebefore_model -.-> __end__;
+	EnforcementMiddleware\2ebefore_model -.-> model;
+	__start__ --> EnforcementMiddleware\2ebefore_model;
+	model -.-> EnforcementMiddleware\2ebefore_model;
+	model -.-> __end__;
+	model -.-> tools;
+	tools -.-> EnforcementMiddleware\2ebefore_model;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

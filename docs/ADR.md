@@ -450,6 +450,93 @@ Date: 2026-11-24 · Status: **Accepted**
 
 ---
 
+## ADR-023: Scoped OpenRouter access for the conversational agent
+
+**Date:** 2026-11-24. **Status:** implementation accepted with all real roles disabled;
+provider/model access decisions remain gated by the capability evidence in
+`features/tchek-am-agent/CAPABILITIES.md`. Amends ADR-016 for this integration only.
+
+The agent uses pinned `langchain-openrouter` behind `ai/agent/models.py` and scoped
+structured extraction behind `ai/openrouter_client.py`. Existing Anthropic extraction,
+group classification and Groq report transcription keep their current configuration.
+Model and serving-endpoint allow-lists are separate. Requests require nested
+`provider.only`, `data_collection=deny`, `zdr=true`, `require_parameters=true`, and
+`allow_fallbacks=false`. No search plugins, input/output logging, Broadcast or hidden
+legacy-model fallback is enabled. Account/key ZDR-only settings and legal exceptions
+must be reviewed separately; a request flag alone is insufficient evidence.
+
+Transport retries are disabled in the pinned SDK. Every paid attempt reserves a
+conservative integer-micro-USD allowance against locked daily-user and monthly-global
+ledgers before transport. Unknown billing retains the charge; duplicate settlement
+cannot refund twice. Persistent counters include child calls and survive worker recovery.
+Provider absence, refusal, malformed JSON, truncation and policy failure produce typed
+unavailability and reviewed output. Model quality is not established by fake tests.
+
+OpenRouter STT is explicitly unavailable: its current endpoint ignores provider `only`,
+`order` and `ignore`. The adapter makes no request, including when configured with a key.
+Revisit ADR-008 only after an independently enforceable and evaluated STT policy exists.
+Conditional Gemini vision and alternatives remain disabled pending role-specific evidence.
+
+## ADR-024: Bounded conversational graph with durable Django memory
+
+**Date:** 2026-11-24. **Status:** accepted for disabled implementation; pilot acceptance
+remains subject to Issues 26–35 and the evaluation specification.
+
+A compiled outer LangGraph owns authorization, memory, media preparation, response
+validation/rendering, final revalidation and atomic completion. A real `create_agent`
+subgraph owns the model/tool loop. Its mandatory middleware repeats scope checks,
+context bounds, persistent call counters, reservations and strict action validation.
+Server-created runtime context is never constructed from model JSON. Tools provide
+opaque run-local result handles; verdict text and substantive advice come from code
+and reviewed catalogs. The model has no arbitrary text output channel.
+
+Retain ADR-001's Procrastinate queue; use a separate `agent` queue/worker. The router
+commits internal run/event ids before enqueueing. Generation, sequence, lease and fencing
+checks enforce FIFO and reject stale completion. Completion commits memory, staged
+preferences/consent-flow entry, run outcome and a unique delivery outbox atomically.
+The guarded WhatsApp dispatcher rechecks authorization before every attempt. Channel
+delivery remains at least once, with an unavoidable final-send cancellation race.
+
+Django tables persist runs, bounded server-assigned turns and scoped HMAC-authenticated
+entity aliases. History is untrusted data, never approval. No automatic summaries,
+per-node checkpointer recovery, delegated agents or general-purpose execution tools.
+MENU, data-protection commands, flow/language changes, blocking and the runtime kill
+switch interrupt incompatible work. Ordinary consecutive idle turns remain ordered.
+
+Agent photo checks use transient decoded query images against existing internal matches;
+they do not add thumbnails/sightings to the shared catalog or automatically upload to
+SerpAPI. This intentionally minimizes chat-media persistence. Existing deterministic
+photo/report paths remain separate; their external-upload eligibility review is a pilot
+blocker. Vision observations always require the user to verify/type critical values.
+Agent chat and agent transcripts are never copied into training samples (D5).
+
+## ADR-025: Agent retention and local metadata-only observability
+
+**Date:** 2026-11-24. **Status:** local implementation accepted; production tracing and
+hosting are not approved. Extends ADR-022 without editing its accepted rules.
+
+| Store | Handling |
+|---|---|
+| Agent turns and aliases | Delete after 7 days; retrieval additionally expires after 24 hours, 20 messages and 6,000 conservative history tokens. |
+| Agent delivery text | Clear after 7 days; pending records retain their delivery/recovery metadata. |
+| Terminal run/operation/delivery/reservation metadata | Delete after 32 days, conservatively allowing the full reconciliation window. Pending runs remain until reconciled. |
+| Per-user/global period budgets | Keep current period and at least 32 days for reconciliation; erase per-user scope keys on account erasure. |
+| AICallLog | Aggregate after 90 days into anonymous monthly purpose/model token/call totals; no request or user identifiers in aggregates. |
+
+Existing retention batching locks and rechecks candidates. User/run/linked-report/subject
+holds protect applicable stores; holding data never extends its eligibility as context.
+User erasure cascades through agent stores unless applicable legal hold forbids erasure.
+Budget charges for uncertain requests remain conservative through recovery.
+
+The local synthetic Langfuse trial uses an isolated localhost-only pinned Compose stack.
+A private OpenTelemetry provider exports explicit metadata spans to the supported
+OTLP/HTTP endpoint. No stock LangChain callback, media instrumentation or global exporter
+is installed. Span names/outcomes are closed enums; attributes are constructed from fixed
+policy codes and bounded numeric counters, never arbitrary callback metadata.
+Export/authentication failures disable optional tracing and cannot retry inference or
+change replies. Flush is bounded. Real-user trace export stays off pending selective
+deletion/hold support, processor review and a production hosting decision (D3/D4).
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

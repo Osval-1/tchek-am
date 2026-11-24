@@ -84,11 +84,16 @@ def _check_one(ctx: Context, e164: str) -> Reply:
         user=ctx.user, kind=CheckLog.Kind.NUMBER, subject_ref=e164, result_band=result.band.value
     )
 
+    return render_number(e164, phone.operator, result, lang)
+
+
+def render_number(e164: str, operator: str, result: BandResult, lang: str | None) -> Reply:
+    """Shared deterministic renderer; no counters, logs or outbound messages."""
     number = format_cm_number(e164)
-    if phone.operator == "Unknown":
+    if operator == "Unknown":
         lines = [t("check.number.header_no_operator", lang, number=number)]
     else:
-        lines = [t("check.number.header", lang, number=number, operator=phone.operator)]
+        lines = [t("check.number.header", lang, number=number, operator=operator)]
     lines += _band_lines(result, lang)
     if result.under_appeal and result.band != Band.GREEN:
         lines.append(t("check.number.under_appeal", lang))
@@ -119,6 +124,9 @@ def handle_check_number(ctx: Context) -> list[Reply]:
             replies.append(Reply(t("check.limit_reached", ctx.lang)))
             return replies  # nothing more is checked or logged once the quota is used
         replies.append(reply)
+        from tchekam.ai.agent.execution import record_number_shortcut
+
+        record_number_shortcut(ctx, e164)
     if len(numbers) > MAX_NUMBERS:
         replies.append(Reply(t("check.number.too_many", ctx.lang)))
     return replies

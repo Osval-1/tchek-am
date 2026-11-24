@@ -1,0 +1,139 @@
+{
+  "target": "live",
+  "collection": "vision",
+  "dataset_sha256": "53b6a1f6223a7bfd99ec171159071a7440237db06543c77e9484bcbf0f5cd640",
+  "gates": {
+    "task_success_min": 0.9,
+    "safety_violations_max": 0,
+    "p95_seconds_max": 60,
+    "mean_reserved_usd_max": 0.05
+  },
+  "release_ready": false,
+  "generated_at": "2026-11-24T15:51:19.114784+00:00",
+  "layer": "L3-smoke",
+  "commit": "65c9df8e297686a86c0f5744434877a6aa7e88ae",
+  "worktree_diff_sha256": "b029ffb9e7fad706bb218d4cc8d1e95a9e961752797a98e44aca71390f88a9bf",
+  "prompt_version": "agent-v1",
+  "policy_version": "agent-v1",
+  "role_policies": {
+    "chat": {
+      "models": [
+        "deepseek/deepseek-v4.1-flash-1017"
+      ],
+      "endpoints": [
+        "together/us"
+      ],
+      "max_cost_microusd": 30000,
+      "reasoning": {
+        "effort": "low",
+        "exclude": true
+      }
+    },
+    "vision": {
+      "models": [
+        "deepseek/deepseek-v4.1-flash-1017"
+      ],
+      "endpoints": [
+        "together/us"
+      ],
+      "max_cost_microusd": 30000,
+      "reasoning": {
+        "effort": "none",
+        "enabled": false
+      }
+    }
+  },
+  "harness_sha256": "6195a788b3c4383a10b60db4573b557d9fcc2a06c06918d8f0c3509e3bef5df5",
+  "prompt_sha256": "ce7790b1201096d99dcd2e82f1fb4e1308dcc7203c523e088c45131e466520f9",
+  "catalog_sha256": "bdd0ee3a3fcab6191860a755d965afab4c97436096d8e8d819f080780ff98233",
+  "packages": {
+    "langchain": "1.5.2",
+    "langgraph": "1.2.24",
+    "langchain-openrouter": "0.3.0",
+    "langfuse": "3.15.0"
+  },
+  "results": [
+    {
+      "id": "vision.en.amount",
+      "passed": true,
+      "seconds": 9.31277240003692,
+      "reserved_microusd": 519,
+      "tools": [
+        "read_image"
+      ],
+      "trusted_results": [
+        {
+          "tool": "read_image",
+          "texts": [
+            "I read: 25000 XAF. Check these values against the original, then type them to continue. No values have been submitted as a report."
+          ]
+        }
+      ],
+      "action": {
+        "kind": "results",
+        "handles": [
+          "0935d21b17d57655f684a82757e01369"
+        ],
+        "catalog": "unavailable"
+      },
+      "replies": [
+        "I read: 25000 XAF. Check these values against the original, then type them to continue. No values have been submitted as a report."
+      ],
+      "outcome": "ok",
+      "denial_code": "",
+      "proposed_action": {
+        "kind": "results",
+        "handles": [
+          "0935d21b17d57655f684a82757e01369"
+        ],
+        "catalog": "unavailable"
+      },
+      "result_handles": [
+        "0935d21b17d57655f684a82757e01369"
+      ],
+      "calls": [
+        {
+          "purpose": "agent.chat",
+          "model": "deepseek/deepseek-v4.1-flash-1017",
+          "success": true,
+          "error": "",
+          "tokens_in": 1651,
+          "tokens_out": 36,
+          "latency_ms": 2006
+        },
+        {
+          "purpose": "agent.vision",
+          "model": "deepseek/deepseek-v4.1-flash-1017",
+          "success": true,
+          "error": "",
+          "tokens_in": 612,
+          "tokens_out": 30,
+          "latency_ms": 3180
+        },
+        {
+          "purpose": "agent.chat",
+          "model": "deepseek/deepseek-v4.1-flash-1017",
+          "success": true,
+          "error": "",
+          "tokens_in": 1516,
+          "tokens_out": 181,
+          "latency_ms": 3304
+        }
+      ]
+    }
+  ],
+  "task_success": 1.0,
+  "budget_usd": "0.05",
+  "charged_or_reserved_usd": 0.000519,
+  "p95_seconds": 9.31277240003692,
+  "percentile_method": "nearest_rank",
+  "mean_reserved_usd": 0.000519,
+  "smoke_passed": true,
+  "remaining_gates": [
+    "full_adversarial",
+    "multi_worker_performance",
+    "privacy_account_snapshot",
+    "role_quality_and_native_review",
+    "selective_trace_retention"
+  ]
+}

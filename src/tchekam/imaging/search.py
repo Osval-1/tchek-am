@@ -59,7 +59,9 @@ def _phash_candidates(image: Image) -> list[tuple[int, int]]:
     # bit_count() takes bit strings, hence the cast.
     distance = RawSQL(
         'bit_count(("imaging_image"."phash" # %s::bigint)::bit(64))',
-        [image.phash],
+        # Text is cast server-side, including -2**63: client-side SQL binding otherwise
+        # parses the positive magnitude before unary minus and overflows bigint.
+        [str(image.phash)],
         output_field=IntegerField(),
     )
     rows = (

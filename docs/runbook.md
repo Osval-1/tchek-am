@@ -232,3 +232,87 @@ The nightly job `retention.run` (02:00 Africa/Douala, on the `default` queue) ap
 - A rule that failed is listed under `errors` in the audit row and in the worker log (class name only); the other rules still ran, and the next night retries it.
 - Legal hold (police or court request): in the admin, select the report, the number (Phone numbers) or the user (Bot users, searched by exact number) and use "Place on legal hold" (superusers, or staff given the `retention | Can place or release a legal hold` permission). Nothing about it is deleted until "Release legal hold". Both are audit-logged. A held user cannot be deleted.
 - Never rotate `REPORTER_KEY_SECRET`: reporter identities, the trust kept after erasure and the subject references of old rejected reports are keyed by it.
+# Conversational agent (disabled until release gates pass)
+
+The implementation ledger is `docs/features/tchek-am-agent/ISSUES.md`; model/provider
+eligibility is recorded in `CAPABILITIES.md`. Installing migrations does not enable the
+agent. `AGENT_ENABLED=False`, no runtime `AgentControl` cohort and empty role policies
+keep current routing. Never treat the contract suite or missing-key run as live release
+evidence. Existing Anthropic/Groq/report/search configuration is independent.
+
+After acceptance, run inference in a separate process so it cannot exhaust messaging:
+
+```sh
+uv run python src/manage.py procrastinate worker -q agent --concurrency 2
+```
+
+Keep the current `default,whatsapp` worker running separately. `agent.reconcile` runs
+each minute through Procrastinate's existing periodic-task mechanism. Jobs carry ids,
+not message text, media or transcripts. Use the agent run/outbox status and age to alert
+on oldest pending work, processing latency, queue wait and recovery exhaustion.
+
+Superusers can manage the singleton **Agent control** in the OTP-protected Django admin:
+explicit pilot users, rollout percentage, enabled and vision enabled. The environment
+master switch is an additional prerequisite. Disabling the runtime switch discards
+pending/running work and cancels pending deliveries; re-enabling cannot revive them.
+Role policies, memory keys and spending limits must be configured. Missing keys,
+per-call bounds, positive daily/monthly budgets or endpoint lists deny paid calls.
+The redundant `approved` and `zdr_only_verified` booleans have been removed: the owner
+already selected DeepSeek and confirmed account ZDR. Every request still enforces
+`zdr: true`, `data_collection: deny`, exact endpoint routing and no provider fallback.
+Use the tested role configuration in `.env.example`; model defaults select DeepSeek.
+Provider response ids and serving-provider metadata (when returned) are retained in
+the content-free AI call log. A provider display name is not an exact endpoint slug;
+the request's enforced endpoint list is recorded in synthetic receipts.
+OpenRouter STT is currently unavailable even with a key: do not substitute a less
+restricted backend during an outage. PCM is outside the default enabled language list.
+
+For rollback, turn off Agent control first, stop the `agent` worker, and leave messaging
+and retention workers running. The reconciler/dispatcher recheck the switch. No schema
+rollback or provider change is required. Do not manually refund uncertain reservations
+without billing evidence; worker recovery retains their charge. Do not use bulk SQL to
+bypass the application control/block hooks. Final WhatsApp delivery is at least once:
+a crash after channel acceptance can duplicate a message, and a cancellation racing
+the final network send cannot be made atomic with WhatsApp.
+
+Agent retention is included in the existing nightly job and `run_retention --dry-run`.
+Turns, aliases and rendered delivery content expire after 7 days; retrieval expires
+earlier. Terminal metadata is kept 32 days, AI call logs 90 days before anonymous
+aggregation. Pending recovery records are retained. User/run/linked-report/number holds
+protect applicable rows and are rechecked under retention locks. Do not delete aliases
+or runs directly to implement erasure; use existing account-erasure handling so holds
+and per-user budget identifiers are respected. No agent chat data enters training.
+
+For local synthetic Langfuse validation only:
+
+```sh
+uv run python -m evals.agent.local_secrets
+docker compose --env-file .scratch/langfuse.env -f docker-compose.langfuse.yml up -d
+uv run python -m evals.agent.local_smoke
+docker compose --env-file .scratch/langfuse.env -f docker-compose.langfuse.yml stop
+```
+
+The secrets generator refuses to overwrite existing `.scratch/langfuse.env`. The local
+web UI is `http://localhost:3100`; it is bound to loopback. All six services/volumes are
+isolated from the application's database. `stop` preserves synthetic data; a deliberate
+`down --volumes` against **this Compose file/project only** resets the synthetic stack.
+No cloud project or production tracer is configured. Do not put real conversations,
+production secrets or evidence into Studio or this local trial. Selective trace
+retention/hold and cleanup remain release gates; local hosting is not privacy approval.
+
+To inspect the complete fake-only graph without production credentials:
+
+```sh
+uv run langgraph dev --no-browser --host 127.0.0.1 --port 2024
+uv run python -m evals.agent.export_graphs
+uv run python -m evals.agent.run --target contracts
+```
+
+The local API loads `tchekam_synthetic`; its services, model, tools, memory and delivery
+are synthetic. Studio links to the hosted Studio UI, but the development runtime is
+loopback-only and LangSmith tracing is disabled. Do not provide production data to it.
+The opt-in `--target live --budget-usd <finite ceiling>` harness uses a uniquely named
+temporary PostgreSQL database and FakeChannel. It requires a configured chat policy and
+explicit paid invocation. The owner-authorized $1 initial live trial is archived under
+`evals/agent/results/2026-11-24-initial/`; see CAPABILITIES.md for its results and limits.
+The small smoke never marks a release ready; complete EVAL_SUITE.md's larger evaluation.

@@ -1,0 +1,5 @@
+{
+  "dependencies": ["."],
+  "graphs": {"tchekam_synthetic": "./src/tchekam/ai/agent/development.py:make_graph"},
+  "env": {"DJANGO_SETTINGS_MODULE": "tchekam.settings.test", "LANGSMITH_TRACING": "false", "LANGCHAIN_TRACING_V2": "false", "OPENROUTER_API_KEY": "", "LANGFUSE_MEDIA_UPLOAD_ENABLED": "false"}
+}

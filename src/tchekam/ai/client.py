@@ -102,6 +102,9 @@ def record_call(
     cache_read_tokens: int = 0,
     cache_write_tokens: int = 0,
     request_id: str = "",
+    serving_provider: str = "",
+    agent_run_id: int | None = None,
+    call_id: str = "",
 ) -> None:
     AICallLog.objects.create(
         purpose=purpose,
@@ -115,4 +118,7 @@ def record_call(
         success=error is None,
         error=error or "",
         request_id=request_id,
+        serving_provider=serving_provider,
+        agent_run_id=agent_run_id,
+        call_id=call_id,
     )

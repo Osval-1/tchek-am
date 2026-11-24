@@ -119,6 +119,12 @@ def start_flow(
     ttl: timedelta | None = None,
 ) -> None:
     """Enter a flow. With a ttl the router drops the flow once it has gone stale."""
+    from tchekam.ai.agent.execution import invalidate
+
+    if settings.AGENT_ENABLED and conv.pk:
+        invalidate(conv)
+    else:
+        conv.agent_generation += 1
     conv.flow = name
     conv.step = step
     conv.state = state or {}
@@ -213,6 +219,24 @@ def _await_message(ctx: Context) -> list[Reply]:
 
 def _route_idle(ctx: Context) -> list[Reply]:
     msg = ctx.msg
+    from tchekam.ai.agent.execution import queue_turn
+
+    # Preserve explicit commands/choices and cheap bare-number/contact checks. Natural text
+    # containing a number must reach the agent before the legacy embedded-number branch.
+    norm = normalize(msg.text)
+    explicit = (
+        norm.isdigit()
+        and len(norm) <= 2
+        or norm in (REPORT_VERBS | HELP_WORDS | APPEAL_WORDS | REPORT_NOUNS)
+    )
+    eligible = msg.kind in ("image", "audio") or (
+        msg.kind == "text"
+        and bool(norm)
+        and not explicit
+        and normalize_cm_number((msg.text or "").strip()) is None
+    )
+    if eligible and queue_turn(ctx):
+        return ctx.extra.pop("agent_reply", [])
     if msg.kind == "image":
         return _ask_image_choice(ctx)
     if msg.kind == "audio":
@@ -287,6 +311,7 @@ def route(ctx: Context) -> list[Reply]:
     Blocked users get no reply, except for data-protection commands: their STOP GROUP is still
     honoured (and confirmed), so blocking never keeps someone's group photos collected.
     """
+    before = (ctx.conversation.flow, ctx.conversation.step, ctx.user.language)
     if ctx.user.blocked:
         command = _command(ctx.msg)
         if command not in DATA_PROTECTION_COMMANDS:
@@ -294,6 +319,11 @@ def route(ctx: Context) -> list[Reply]:
         replies = dispatch(ctx, command)
     else:
         replies = _route(ctx)
+    after = (ctx.conversation.flow, ctx.conversation.step, ctx.user.language)
+    if before != after or _command(ctx.msg) is not None:
+        from tchekam.ai.agent.execution import invalidate
+
+        invalidate(ctx.conversation)
     ctx.conversation.save()
     return replies
 

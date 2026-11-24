@@ -1,0 +1,34 @@
+{
+  "chat": {
+    "approved": true,
+    "models": [
+      "deepseek/deepseek-v4.1-flash-1017"
+    ],
+    "endpoints": [
+      "together/us"
+    ],
+    "zdr_only_verified": true,
+    "max_cost_microusd": 30000,
+    "reasoning": {
+      "effort": "low",
+      "exclude": true
+    },
+    "temperature": 0
+  },
+  "vision": {
+    "approved": true,
+    "models": [
+      "deepseek/deepseek-v4.1-flash-1017"
+    ],
+    "endpoints": [
+      "together/us"
+    ],
+    "zdr_only_verified": true,
+    "max_cost_microusd": 30000,
+    "reasoning": {
+      "effort": "none",
+      "enabled": false
+    },
+    "temperature": 0
+  }
+}

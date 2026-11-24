@@ -139,11 +139,114 @@ def _run_group_intake(now):
     return 0
 
 
+def _agent_case(name):
+    def make(hold):
+        from tchekam.ai.models import (
+            AgentBudget,
+            AgentDelivery,
+            AgentEntityReference,
+            AgentReservation,
+            AgentRun,
+            AgentTurn,
+            AICallLog,
+        )
+
+        owner = user()
+        run = AgentRun.objects.create(
+            user=owner,
+            inbound_key=f"agent-{owner.pk}",
+            generation=0,
+            sequence=1,
+            status="complete",
+            completed_at=OLD,
+        )
+        if hold == "user":
+            _hold(owner)
+        elif hold == "run":
+            _hold(run)
+        elif hold == "number":
+            number = phone(legal_hold=True)
+            AgentEntityReference.objects.create(
+                run=run,
+                user=owner,
+                generation=0,
+                alias="last_number",
+                value=number.e164,
+                key_version="v1",
+                signature="x",
+            )
+        else:
+            linked = report("approved", decided_at=OLD, legal_hold=True)
+            run.linked_report = linked
+            run.save()
+        if name == "agent_runs":
+            model, row = AgentRun, run
+        elif name == "agent_turns":
+            model = AgentTurn
+            row = model.objects.create(
+                run=run,
+                user=owner,
+                generation=0,
+                role="user",
+                source="text",
+                content={"text": "synthetic"},
+                key_version="v1",
+                signature="x",
+            )
+        elif name == "agent_aliases":
+            model = AgentEntityReference
+            row = model.objects.create(
+                run=run,
+                user=owner,
+                generation=0,
+                alias="other",
+                value="+237677123456",
+                key_version="v1",
+                signature="x",
+            )
+        elif name == "agent_delivery_content":
+            model = AgentDelivery
+            row = model.objects.create(
+                run=run, index=0, generation=0, text="synthetic", status="sent"
+            )
+        elif name == "agent_budgets":
+            model = AgentBudget
+            row = model.objects.create(scope=f"user:{owner.pk}:old", used=100)
+            AgentReservation.objects.create(
+                run=run,
+                call_id=f"call-{owner.pk}",
+                amount=100,
+                user_scope=row.scope,
+                global_scope="global:old",
+            )
+        else:
+            model = AICallLog
+            row = model.objects.create(
+                agent_run=run, purpose="agent.chat", model="fake", success=True
+            )
+        set_time(model, row.pk, created_at=OLD)
+        return lambda: model.objects.filter(pk=row.pk).exists()
+
+    return make
+
+
 # Actions that are not retention rules but must respect a hold as well.
 NOT_RULES = {"group_intake_scrub": _run_group_intake}
 
 REPORT_HOLDS = ("report", "user", "number", "evidence", "subject_user")
 CASES = [
+    *[
+        (name, _agent_case(name), hold)
+        for name in (
+            "agent_runs",
+            "agent_turns",
+            "agent_aliases",
+            "agent_delivery_content",
+            "agent_budgets",
+            "ai_calls",
+        )
+        for hold in ("user", "run", "number", "report")
+    ],
     *[("webhooks", _webhook, h) for h in ("user", "number")],
     *[("group_events", _group_event, h) for h in ("user", "number")],
     *[("notifications", _notification, h) for h in REPORT_HOLDS],
@@ -172,7 +275,7 @@ def test_every_rule_has_a_legal_hold_case():
 @pytest.mark.parametrize(("name", "make", "hold"), CASES, ids=[f"{n}-{h}" for n, _, h in CASES])
 def test_legal_hold_blocks_the_rule(name, make, hold):
     still_there = make(hold)
-    action = NOT_RULES.get(name) or getattr(rules, name)
+    action = NOT_RULES.get(name) or next(rule for rule in rules.RULES if rule.name == name)
 
     assert action(NOW) == 0
     assert still_there()

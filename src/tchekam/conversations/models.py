@@ -36,6 +36,8 @@ class Conversation(models.Model):
     state = models.JSONField(default=dict)
     updated_at = models.DateTimeField(auto_now=True)
     expires_at = models.DateTimeField(null=True, blank=True)
+    agent_generation = models.PositiveBigIntegerField(default=0)
+    agent_sequence = models.PositiveBigIntegerField(default=0)
 
     def __str__(self) -> str:
         return f"Conversation#{self.pk} ({self.flow})"

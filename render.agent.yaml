@@ -1,0 +1,68 @@
+# Optional worker addition AFTER acceptance. Not referenced by render.yaml and not deployed.
+# It uses the existing shared env group/database. Configure the same required secrets as
+# tchekam-worker plus the agent-specific secrets/policies below before creating it.
+services:
+  - type: worker
+    name: tchekam-agent-worker
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerCommand: python src/manage.py procrastinate worker -q agent --concurrency 2
+    autoDeployTrigger: off
+    envVars:
+      - fromGroup: tchekam-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tchekam-db
+          property: connectionString
+      - key: AGENT_ENABLED
+        value: "false"
+      - key: AGENT_VISION_ENABLED
+        value: "false"
+      - key: AGENT_TRACE_SYNTHETIC
+        value: "false"
+      - key: AGENT_ROLE_POLICIES
+        value: "{}"
+      - key: AGENT_DAILY_BUDGET_MICROUSD
+        value: "0"
+      - key: AGENT_MONTHLY_BUDGET_MICROUSD
+        value: "0"
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: AGENT_MEMORY_KEYS
+        sync: false
+      - key: AGENT_OPERATION_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: WASENDER_API_KEY
+        sync: false
+      - key: WASENDER_WEBHOOK_SECRET
+        sync: false
+      - key: WASENDER_BACKUP_API_KEY
+        sync: false
+      - key: WASENDER_BACKUP_WEBHOOK_SECRET
+        sync: false
+      - key: TERMS_URL
+        sync: false
+      - key: REPORTER_KEY_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: EMBEDDER_BACKEND
+        sync: false

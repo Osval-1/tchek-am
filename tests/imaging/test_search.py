@@ -114,12 +114,13 @@ def test_embedding_match_when_phash_differs():
     assert other.pk not in matches
 
 
-def test_summary_lists_distinct_numbers_first_seen_and_flagged_band():
+def test_summary_lists_distinct_numbers_first_seen_and_flagged_band(make_partner_group):
     img = structured_image(4)
+    group = make_partner_group()
     a = PhoneNumber.objects.create(e164="+237670000001", operator="mtn")
     b = PhoneNumber.objects.create(e164="+237670000002", operator="mtn")
-    first = ingest_img(img, SightingContext(context="group", phone_number=a, group_id=9))
-    ingest_img(img, SightingContext(context="group", phone_number=a, group_id=9))
+    first = ingest_img(img, SightingContext(context="group", phone_number=a, group=group))
+    ingest_img(img, SightingContext(context="group", phone_number=a, group=group))
     ingest_img(img, SightingContext(context="report", phone_number=b))
     query = ingest_img(VARIANTS["resized"](img))
 

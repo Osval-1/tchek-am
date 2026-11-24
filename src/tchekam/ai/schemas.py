@@ -51,3 +51,9 @@ class Extraction(BaseModel):
             payment_proof_candidate=False,
             extraction_failed=True,
         )
+
+
+class ProductPhoto(BaseModel):
+    """Whether a partner-group photo shows a product offered for sale (group listening, F8)."""
+
+    is_product: bool

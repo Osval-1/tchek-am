@@ -41,7 +41,7 @@ def bot(fake_channel):
 
 
 def seen_by(img, number, **kw):
-    """A sighting of `img` tied to a seller number (and a group id, which must never surface)."""
+    """A sighting of `img` tied to a seller number (and a group, which must never surface)."""
     ctx = SightingContext(context="group", phone_number=get_or_create_phone(number), **kw)
     return ingest(encode(img), "group", ctx)
 
@@ -73,10 +73,12 @@ def test_no_match_reply_and_log(bot):
     assert bot.conversation.flow == "idle"
 
 
-def test_two_numbers_match_reply(bot):
+def test_two_numbers_match_reply(bot, make_partner_group):
     img = structured_image(4)
-    seen_by(img, NUMBER_A, group_id=7)
-    seen_by(VARIANTS["resized"](img), NUMBER_B, group_id=8)  # near-duplicate, another seller
+    seen_by(img, NUMBER_A, group=make_partner_group())
+    seen_by(
+        VARIANTS["resized"](img), NUMBER_B, group=make_partner_group()
+    )  # near-duplicate, another seller
     first_seen = timezone.now()
 
     texts = send_photo(bot, img)

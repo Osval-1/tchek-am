@@ -5,7 +5,14 @@ from urllib.parse import quote
 
 import httpx
 
-from .channel import MAX_MEDIA_BYTES, ChannelError, InboundMessage, MediaTooLarge, RateLimited
+from .channel import (
+    MAX_MEDIA_BYTES,
+    ChannelError,
+    InboundMessage,
+    MediaTooLarge,
+    RateLimited,
+    refuse_group,
+)
 
 TIMEOUT_SECONDS = 10.0
 DEFAULT_RETRY_AFTER = 60
@@ -39,16 +46,21 @@ class WaSenderChannel:
             timeout=TIMEOUT_SECONDS, transport=transport, follow_redirects=True
         )
 
-    def send_text(self, to: str, text: str) -> None:
+    def send_text(self, to: str, text: str, *, allow_group: bool = False) -> None:
+        refuse_group(to, allow_group)
         self._call("POST", "send-message", {"to": to, "text": text})
 
-    def send_image(self, to: str, image_url: str, caption: str | None = None) -> None:
+    def send_image(
+        self, to: str, image_url: str, caption: str | None = None, *, allow_group: bool = False
+    ) -> None:
+        refuse_group(to, allow_group)
         body = {"to": to, "imageUrl": image_url}
         if caption:
             body["text"] = caption
         self._call("POST", "send-message", body)
 
-    def send_typing(self, jid: str, ms: int) -> None:
+    def send_typing(self, jid: str, ms: int, *, allow_group: bool = False) -> None:
+        refuse_group(jid, allow_group)
         self._call("POST", "send-presence-update", {"jid": jid, "type": "composing", "delayMs": ms})
 
     def leave_group(self, group_jid: str) -> None:

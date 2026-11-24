@@ -651,6 +651,16 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "This report is no longer waiting for more information. Type 0 for the menu.",
         "pcm": "Dis report no dey wait for more information again. Type 0 for menu.",  # needs native review
     },
+    "groups.opt_out.done": {
+        "fr": "C'est fait : les photos que vous avez publiées dans les groupes partenaires ont été supprimées de notre base, et vos photos de groupe ne seront plus enregistrées.",
+        "en": "Done: the photos you posted in partner groups have been deleted from our database, and your group photos will no longer be collected.",
+        "pcm": "E don do: we don delete di photos wey you post for partner groups from our database, and we no go collect your group photos again.",  # needs native review
+    },
+    "groups.opt_out.nothing": {
+        "fr": "Nous n'avions aucune photo de groupe de votre part. C'est noté : vos photos de groupe ne seront pas enregistrées.",
+        "en": "We had no group photos from you. Noted: your group photos will not be collected.",
+        "pcm": "We no get any group photo from you. We don note am: we no go collect your group photos.",  # needs native review
+    },
 }
 
 DEFAULT_LANG = "fr"

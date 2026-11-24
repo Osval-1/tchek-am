@@ -65,9 +65,18 @@ class ImageSighting(models.Model):
     bot_user = models.ForeignKey(
         "conversations.BotUser", null=True, blank=True, on_delete=models.SET_NULL
     )
-    # Placeholder for the PartnerGroup FK: that model arrives in Issue 20, which will turn this
-    # into `group = ForeignKey(...)` on the same `group_id` column. Never exposed in search results.
-    group_id = models.PositiveBigIntegerField(null=True, blank=True)
+    # The partner group a group sighting came from. Never exposed in search results (PRD F8).
+    # PROTECT: deleting a group must never leave its sightings behind or orphaned; the
+    # "delete group and its sightings" admin action deletes the sightings first.
+    group = models.ForeignKey(
+        "groups.PartnerGroup",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+        db_column="group_id",
+    )
+    # Retention keys off seen_at: group sightings are kept 24 months (ADR-013, Issue 24).
     seen_at = models.DateTimeField(default=timezone.now)
     context = models.CharField(max_length=12, choices=Context.choices)
 

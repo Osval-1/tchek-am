@@ -41,6 +41,9 @@ GLOBAL_COMMANDS = {
     "stop groupe": "group_opt_out",
     "stop training": "training_opt_out",
 }
+# Data-protection requests honoured even before onboarding: a group member who never used the
+# bot must be able to opt out with their first message. Their handler answers without a language.
+PRE_ONBOARDING_COMMANDS = {"group_opt_out"}
 # Menu digit -> prompt flow that waits for the input, then dispatches the intent.
 MENU_PROMPTS = {
     "1": ("await_number", "prompt.send_number"),
@@ -239,11 +242,11 @@ def _route_idle(ctx: Context) -> list[Reply]:
 
 def _route(ctx: Context) -> list[Reply]:
     conv = ctx.conversation
-    if ctx.user.language is None:
-        # Onboarding comes before everything, including commands: no language, no copy.
+    command = GLOBAL_COMMANDS.get(normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
+    if ctx.user.language is None and command not in PRE_ONBOARDING_COMMANDS:
+        # Onboarding comes before everything else: no language, no copy.
         return _language_pick(ctx) if conv.flow == "language_pick" else _start_language_picker(ctx)
 
-    command = GLOBAL_COMMANDS.get(normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
     if command == "menu":
         return _show_menu(ctx)
     if command == "lang":

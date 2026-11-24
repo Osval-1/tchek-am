@@ -2,7 +2,7 @@
 
 import logging
 
-from tchekam.messaging.channel import ChannelError, get_channel
+from tchekam.messaging.channel import ChannelError, get_channel, is_group_jid
 
 from .models import BotUser
 
@@ -17,6 +17,9 @@ def send_to_user(user: BotUser, text: str | None = None, image_url: str | None =
     if user.blocked:
         return False
     to = user.wa_phone.lstrip("+")  # stored as +E.164; channels take digits
+    if is_group_jid(to):  # the bot never writes to a group (ADR-012); cannot happen via BotUser
+        logger.warning("send_to_user: refused group target for %s", user)
+        return False
     channel = get_channel()
     try:
         if image_url:

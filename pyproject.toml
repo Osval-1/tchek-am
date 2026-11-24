@@ -18,6 +18,9 @@ dependencies = [
     "django-otp>=1.7.5",
     "qrcode>=8.2",
     "imagehash>=4.3.2",
+    "sentry-sdk>=2.0,<3",
+    "whitenoise>=6.12.0",
+    "gunicorn>=27.0.1",
 ]
 
 [project.optional-dependencies]
@@ -33,6 +36,7 @@ dev = [
     "pytest>=8",
     "pytest-cov>=7.1.0",
     "pytest-django>=4.9",
+    "pyyaml>=6.0.4",
     "ruff>=0.8",
 ]
 

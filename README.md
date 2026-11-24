@@ -26,7 +26,7 @@ uv run python src/manage.py runserver
 uv run pytest               # needs the db service running
 ```
 
-Health check: `GET http://localhost:8000/healthz`.
+Health check: `GET http://localhost:8000/healthz`. Deployment (Docker image, `render.yaml`, backups): see [docs/runbook.md](docs/runbook.md).
 
 ## Background tasks
 

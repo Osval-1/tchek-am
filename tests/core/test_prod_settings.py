@@ -18,6 +18,11 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "ak-test")
     monkeypatch.setenv("GROQ_API_KEY", "gk-test")
     monkeypatch.setenv("SERPAPI_API_KEY", "sk-test")
+    # The dev environment has no open_clip, which prod now refuses when the backend is openclip.
+    monkeypatch.setenv("EMBEDDER_BACKEND", "fake")
+    from tchekam.settings import base
+
+    importlib.reload(base)  # base reads the environment once, at import
 
 
 @pytest.fixture
@@ -112,3 +117,71 @@ def test_prod_refuses_to_start_without_channel_safeguards(monkeypatch):
     finally:
         monkeypatch.delenv("CHANNEL_SAFEGUARDS")
         importlib.reload(base)
+
+
+def test_prod_refuses_openclip_without_the_ml_extra(monkeypatch):
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("EMBEDDER_BACKEND", "openclip")
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+    from django.core.exceptions import ImproperlyConfigured
+
+    from tchekam.settings import base, prod
+
+    importlib.reload(base)
+    with pytest.raises(ImproperlyConfigured, match="WITH_ML=1"):
+        importlib.reload(prod)
+
+
+def test_prod_accepts_openclip_when_the_ml_extra_is_installed(monkeypatch):
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("EMBEDDER_BACKEND", "openclip")
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: object())
+    from tchekam.settings import base, prod
+
+    importlib.reload(base)
+
+    assert importlib.reload(prod).EMBEDDER_BACKEND == "openclip"
+
+
+def test_prod_serves_static_files_with_whitenoise(prod):
+    assert prod.MIDDLEWARE[0] == "django.middleware.security.SecurityMiddleware"
+    assert prod.MIDDLEWARE[1] == "whitenoise.middleware.WhiteNoiseMiddleware"
+    assert "Manifest" in prod.STORAGES["staticfiles"]["BACKEND"]
+    assert str(prod.STATIC_ROOT).endswith("staticfiles")
+    assert "django.contrib.staticfiles" in prod.INSTALLED_APPS  # provides collectstatic
+
+
+def test_prod_does_not_init_sentry_without_a_dsn(monkeypatch):
+    import sentry_sdk
+
+    calls = []
+    monkeypatch.setattr(sentry_sdk, "init", lambda **kw: calls.append(kw))
+    monkeypatch.delenv("SENTRY_DSN", raising=False)
+    _set_required_env(monkeypatch)
+    from tchekam.settings import prod
+
+    importlib.reload(prod)
+
+    assert calls == []
+
+
+def test_prod_sentry_never_sends_pii_and_scrubs_events(monkeypatch):
+    import sentry_sdk
+
+    calls = []
+    monkeypatch.setattr(sentry_sdk, "init", lambda **kw: calls.append(kw))
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("SENTRY_DSN", "https://k@o.example/1")
+    monkeypatch.setenv("SENTRY_ENVIRONMENT", "staging")
+    monkeypatch.setenv("SENTRY_RELEASE", "v1")
+    monkeypatch.setenv("SENTRY_TRACES_SAMPLE_RATE", "0.05")
+    from tchekam.core.observability import scrub_event
+    from tchekam.settings import prod
+
+    importlib.reload(prod)
+
+    (kw,) = calls
+    assert prod.DEBUG is False
+    assert kw["send_default_pii"] is False
+    assert kw["before_send"] is scrub_event
+    assert (kw["environment"], kw["release"], kw["traces_sample_rate"]) == ("staging", "v1", 0.05)

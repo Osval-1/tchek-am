@@ -1,0 +1,137 @@
+# Render blueprint: web + worker (one Docker image) and Postgres, all in Frankfurt.
+# See docs/runbook.md ("Deploy") before the first sync. Secrets use `sync: false`: Render
+# asks for the value in the dashboard and never reads it from this file. They are declared on
+# each service rather than in the env group because Render does not support `sync: false`
+# inside groups; tests/deploy/test_render_blueprint.py keeps the two lists identical.
+
+databases:
+  - name: tchekam-db
+    databaseName: tchekam
+    user: tchekam
+    region: frankfurt
+    plan: basic-256mb
+    # Matches the pgvector/pgvector:pg16 image used locally and in CI. The Docker image's
+    # pg_dump (postgresql-client 17) can dump this version.
+    postgresMajorVersion: "16"
+    # Private network only; use the dashboard for one-off access.
+    ipAllowList: []
+
+envVarGroups:
+  - name: tchekam-shared
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: tchekam.settings.prod
+      # Generated once at creation and shared by web and worker.
+      - key: SECRET_KEY
+        generateValue: true
+      # One proxy (Render's) in front of Django; verify as described in the runbook.
+      - key: TRUSTED_PROXY_COUNT
+        value: "1"
+      - key: S3_SSE
+        value: "true"
+      - key: S3_REGION
+        value: auto
+      - key: CHANNEL_SAFEGUARDS
+        value: "true"
+      - key: WASENDER_ACTIVE_SESSION
+        value: primary
+      - key: SENTRY_ENVIRONMENT
+        value: production
+
+services:
+  - type: web
+    name: tchekam-web
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    # Runs on the new image before traffic moves; a failing migration keeps the old version live.
+    preDeployCommand: python src/manage.py migrate --noinput
+    autoDeployTrigger: checksPass
+    envVars:
+      - fromGroup: tchekam-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tchekam-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: WASENDER_API_KEY
+        sync: false
+      - key: WASENDER_WEBHOOK_SECRET
+        sync: false
+      - key: WASENDER_BACKUP_API_KEY
+        sync: false
+      - key: WASENDER_BACKUP_WEBHOOK_SECRET
+        sync: false
+      - key: TERMS_URL
+        sync: false
+      - key: REPORTER_KEY_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: EMBEDDER_BACKEND
+        sync: false
+
+  - type: worker
+    name: tchekam-worker
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    # Same image as web. Queues and concurrency as in docs/runbook.md ("Running the worker").
+    dockerCommand: python src/manage.py procrastinate worker -q default,whatsapp --concurrency 8
+    autoDeployTrigger: checksPass
+    envVars:
+      - fromGroup: tchekam-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tchekam-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: WASENDER_API_KEY
+        sync: false
+      - key: WASENDER_WEBHOOK_SECRET
+        sync: false
+      - key: WASENDER_BACKUP_API_KEY
+        sync: false
+      - key: WASENDER_BACKUP_WEBHOOK_SECRET
+        sync: false
+      - key: TERMS_URL
+        sync: false
+      - key: REPORTER_KEY_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: EMBEDDER_BACKEND
+        sync: false

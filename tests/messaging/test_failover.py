@@ -94,6 +94,7 @@ def test_backup_webhook_secret_is_accepted_too(client, settings):
 
 
 PROD_ENV = {
+    "EMBEDDER_BACKEND": "fake",  # prod refuses openclip without the ml extra
     "SECRET_KEY": "k",
     "ALLOWED_HOSTS": "example.org",
     "DATABASE_URL": "postgres://u:p@localhost/db",
@@ -115,9 +116,11 @@ def _load_prod(monkeypatch, **extra):
     for key, value in {**PROD_ENV, **extra}.items():
         monkeypatch.setenv(key, value)
     import tchekam.settings.base as base
-    import tchekam.settings.prod as prod
 
     importlib.reload(base)  # prod star-imports base, which reads the environment once
+    # Imported after the base reload: a first import of prod would run with the stale base.
+    import tchekam.settings.prod as prod
+
     return importlib.reload(prod)
 
 

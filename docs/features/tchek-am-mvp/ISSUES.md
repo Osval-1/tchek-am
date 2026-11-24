@@ -787,3 +787,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 
 **Files likely affected**: `Dockerfile`, `.dockerignore`, `render.yaml`, `src/tchekam/settings/prod.py`, `docs/runbook.md`, `.github/workflows/ci.yml`
 **Dependencies**: 1, 23
+
+**Implementation note (as built):** one `Dockerfile` (multi-stage, uv, non-root, gunicorn, `postgresql-client` for `pg_dump`; the `ml` extra is opt-in with `--build-arg WITH_ML=1`), `render.yaml` (web, worker, Postgres 16, Frankfurt; secrets declared per service because env groups cannot hold `sync: false`), WhiteNoise and Sentry in `settings/prod.py` (`core/observability.py` scrubs events), monthly `core.backup_database` task and `backup_database` command (`core/backup.py`), and a CI `image` job. The runbook sections are filled in `docs/runbook.md`.
+
+**[DECIDE] image embeddings in production:** `WITH_ML=1` (real OpenCLIP matching, image about 1 GB larger, and the worker needs more than the 512 MB `starter` plan) or `EMBEDDER_BACKEND=fake` (pHash-derived vectors only: near-duplicate photo detection is weaker). Prod refuses to start on the default `openclip` without torch, so the choice is explicit. Sentry is pinned to `sentry-sdk<3` (3.x dropped `send_default_pii`).

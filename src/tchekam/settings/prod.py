@@ -14,6 +14,8 @@ WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET")
 WASENDER_API_KEY = env("WASENDER_API_KEY")
 # Linked from the menu; a placeholder URL in prod would send users to a dead page.
 TERMS_URL = env("TERMS_URL")
+# Empty omits the "More help" line; the placeholder default would point users at a dead page.
+HELP_URL = env("HELP_URL", default="")
 # Pseudonymous reporter identity; a placeholder would make keys guessable from phone numbers.
 REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
 # Extraction and classification need Claude; an empty key would fail every call silently.

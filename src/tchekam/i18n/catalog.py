@@ -490,6 +490,112 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "✅ Thank you, your report is recorded. Reference: {reference}\nIt is waiting for review by the moderator (usually within {hours} hours). We will message you here as soon as there is an outcome.",
         "pcm": "✅ Thank you, your report don enter. Reference: {reference}\nE dey wait for moderator to check am (usually inside {hours} hours). We go message you here when decision dey.",  # needs native review
     },
+    "notify.approved": {
+        "fr": "✅ Votre signalement ({reference}) a été examiné et accepté. Il compte désormais dans ce que voient les acheteurs lorsqu'ils vérifient ce numéro. Merci de votre aide.",
+        "en": "✅ Your report ({reference}) was reviewed and accepted. It now counts toward what buyers see when they check this number. Thank you for your help.",
+        "pcm": "✅ We don check your report ({reference}) and we accept am. E don count for wetin buyers go see when dem check dis number. Thank you for your help.",  # needs native review
+    },
+    "notify.rejected.insufficient_evidence": {
+        "fr": "Votre signalement ({reference}) n'a pas pu être accepté : les preuves ne suffisent pas pour le moment. Vous pouvez faire un nouveau signalement avec des preuves plus claires (captures d'écran, SMS de paiement, notes vocales).",
+        "en": "Your report ({reference}) could not be accepted: the evidence was not enough for now. You can start a new report with clearer evidence (screenshots, payment SMS, voice notes).",
+        "pcm": "We no fit accept your report ({reference}): di evidence no reach for now. You fit start new report with evidence wey clear pass (screenshots, payment SMS, voice notes).",  # needs native review
+    },
+    "notify.rejected.duplicate": {
+        "fr": "Votre signalement ({reference}) n'a pas été retenu séparément : un autre signalement couvre déjà cette situation. Merci d'avoir pris le temps de nous écrire.",
+        "en": "Your report ({reference}) was not kept separately: another report already covers this. Thank you for taking the time to write to us.",
+        "pcm": "We no keep your report ({reference}) for e own: another report don already cover dis matter. Thank you say you take time write us.",  # needs native review
+    },
+    "notify.rejected.cannot_verify": {
+        "fr": "Votre signalement ({reference}) n'a pas pu être accepté : nous n'avons pas pu le vérifier. Si vous avez d'autres preuves, vous pouvez faire un nouveau signalement.",
+        "en": "Your report ({reference}) could not be accepted: we were not able to verify it. If you have more evidence, you can start a new report.",
+        "pcm": "We no fit accept your report ({reference}): we no fit verify am. If you get more evidence, you fit start new report.",  # needs native review
+    },
+    "notify.rejected.generic": {
+        "fr": "Nous n'avons pas pu accepter votre signalement ({reference}). Merci d'avoir pris le temps de nous écrire.",
+        "en": "We could not accept your report ({reference}). Thank you for taking the time to write to us.",
+        "pcm": "We no fit accept your report ({reference}). Thank you say you take time write us.",  # needs native review
+    },
+    "notify.need_info.intro": {
+        "fr": "Nous avons besoin d'un complément pour votre signalement ({reference}). Le modérateur demande :",
+        "en": "We need a bit more information for your report ({reference}). The moderator asks:",
+        "pcm": "We need small more information for your report ({reference}). Di moderator ask:",  # needs native review
+    },
+    "notify.need_info.reply": {
+        "fr": "Répondez ici avec d'autres preuves ou détails, puis envoyez FINI.",
+        "en": "Reply here with more evidence or details, then send DONE.",
+        "pcm": "Reply here with more evidence or details, then send DONE.",  # needs native review
+    },
+    "notify.need_info.reply_busy": {
+        "fr": "Pour répondre, envoyez MENU, puis 4, puis vos preuves ou détails, puis FINI.",
+        "en": "To answer, send MENU, then 4, then your evidence or details, then DONE.",
+        "pcm": "To answer, send MENU, then 4, then your evidence or details, then DONE.",  # needs native review
+    },
+    "notify.need_info.generic_question": {
+        "fr": "Merci d'ajouter des preuves ou des détails supplémentaires.",
+        "en": "Please add more evidence or details.",
+        "pcm": "Abeg add more evidence or details.",  # needs native review
+    },
+    "notify.merged_pending": {
+        "fr": "Votre signalement ({reference}) a été rattaché à un signalement existant, encore en cours d'examen.",
+        "en": "Your report ({reference}) was linked to an existing report that is under review.",
+        "pcm": "We join your report ({reference}) to one report wey dey already and dem still dey check am.",  # needs native review
+    },
+    "notify.reopened": {
+        "fr": "Votre signalement ({reference}) est de nouveau en cours d'examen.",
+        "en": "Your report ({reference}) is being reviewed again.",
+        "pcm": "Dem dey check your report ({reference}) again.",  # needs native review
+    },
+    # verify: confirm contacts before launch (operator lines, police/gendarmerie, ANTIC contact)
+    "notify.next_steps": {
+        "fr": (
+            "Que faire maintenant :\n"
+            "- Contactez le service client de votre opérateur de mobile money pour signaler la transaction.\n"
+            "- Déposez une plainte au commissariat de police ou à la brigade de gendarmerie le plus proche.\n"
+            "- Vous pouvez aussi signaler les faits à l'ANTIC (Agence Nationale des Technologies de l'Information et de la Communication)."
+        ),
+        "en": (
+            "What you can do now:\n"
+            "- Contact your mobile-money operator's customer service to report the transaction.\n"
+            "- File a complaint at the nearest police or gendarmerie station.\n"
+            "- You can also report to ANTIC (Agence Nationale des Technologies de l'Information et de la Communication)."
+        ),
+        "pcm": (
+            "Wetin you fit do now:\n"
+            "- Call your mobile-money operator customer service make you report di transaction.\n"
+            "- Go file complaint for di nearest police or gendarmerie station.\n"
+            "- You fit also report am to ANTIC (Agence Nationale des Technologies de l'Information et de la Communication)."
+        ),  # needs native review
+    },
+    "notify.more_help": {
+        "fr": "Plus d'aide : {url}",
+        "en": "More help: {url}",
+        "pcm": "More help: {url}",  # needs native review
+    },
+    "report.needs_info.resume": {
+        "fr": "Votre signalement ({reference}) attend un complément. Le modérateur demande :\n{question}\n\nEnvoyez vos preuves ou détails, puis FINI. ANNULER pour répondre plus tard.",
+        "en": "Your report ({reference}) is waiting for more information. The moderator asks:\n{question}\n\nSend your evidence or details, then DONE. CANCEL to reply later.",
+        "pcm": "Your report ({reference}) dey wait for more information. Di moderator ask:\n{question}\n\nSend your evidence or details, then DONE. CANCEL if you wan reply later.",  # needs native review
+    },
+    "report.needs_info.resubmitted": {
+        "fr": "Merci, votre signalement est de nouveau dans la file de relecture (référence : {reference}). Nous vous écrirons ici dès qu'il y aura une décision.",
+        "en": "Thanks, your report is back in the review queue (ref {reference}). We will message you here when there is an outcome.",
+        "pcm": "Thanks, your report don go back for review queue (ref {reference}). We go message you here when decision dey.",  # needs native review
+    },
+    "report.needs_info.need_content": {
+        "fr": "Ajoutez d'abord au moins une preuve (photo, note vocale) ou un message avec les détails demandés, puis envoyez FINI.",
+        "en": "Please add at least one new piece of evidence (photo, voice note) or a message with the details asked for, then send DONE.",
+        "pcm": "Abeg add at least one new evidence (photo, voice note) or message with di details dem ask for, then send DONE.",  # needs native review
+    },
+    "report.needs_info.cancelled": {
+        "fr": "D'accord, votre signalement reste en attente de complément. Vous pourrez répondre plus tard en tapant 4. Tapez 0 pour le menu.",
+        "en": "OK, your report stays on hold for more information. You can reply later by typing 4. Type 0 for the menu.",
+        "pcm": "OK, your report go stay dey wait for more information. You fit reply later, type 4. Type 0 for menu.",  # needs native review
+    },
+    "report.needs_info.not_waiting": {
+        "fr": "Ce signalement n'attend plus de complément. Tapez 0 pour le menu.",
+        "en": "This report is no longer waiting for more information. Type 0 for the menu.",
+        "pcm": "Dis report no dey wait for more information again. Type 0 for menu.",  # needs native review
+    },
 }
 
 DEFAULT_LANG = "fr"

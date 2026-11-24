@@ -26,13 +26,15 @@ from tchekam.messaging.models import InboundEvent
 from tchekam.messaging.parser import parse_wasender_payload
 from tchekam.speech.base import get_speech_to_text
 
-from . import flow, hooks
+from . import flow, hooks, notify
 from .models import Evidence, Report, ReportSubject
 
 logger = logging.getLogger(__name__)
 
 MAX_TOTAL_BYTES = 15 * 1024 * 1024  # across all evidence of one report
 LOW_CONFIDENCE = 0.4
+# Evidence can be added while drafting and while the moderator waits for more information.
+INGEST_STATUSES = (Report.Status.DRAFT, Report.Status.NEEDS_INFO)
 EVIDENCE_KINDS = {
     "chat": Evidence.Kind.CHAT,
     "momo_sms": Evidence.Kind.MOMO_SMS,
@@ -107,7 +109,7 @@ def _discard(report_id: int, key: str) -> None:
 def _fetch(report_id: int, message_id: str, kind: str) -> _Stored | str | None:
     """The slow part, outside any lock. Returns the stored file, a copy key, or None (skip)."""
     report = Report.objects.select_related("reporter").filter(pk=report_id).first()
-    if report is None or report.reporter is None or report.status != Report.Status.DRAFT:
+    if report is None or report.reporter is None or report.status not in INGEST_STATUSES:
         return None
     if Evidence.objects.filter(report=report, source_message_id=message_id).exists():
         return None  # a duplicate run
@@ -170,7 +172,7 @@ def _settle(
         conv = Conversation.objects.select_for_update().filter(user=user).first()
         collecting = (
             conv is not None
-            and conv.flow == flow.COLLECT
+            and conv.flow in (flow.COLLECT, flow.NEEDS_INFO)
             and conv.state.get("report_id") == report_id
         )
         if collecting:
@@ -187,7 +189,7 @@ def _settle(
 def _keep(report_id: int, message_id: str, stored: _Stored) -> str | None:
     row = Report.objects.select_for_update().get(pk=report_id)
     evidence = Evidence.objects.filter(report=row)
-    if row.status != Report.Status.DRAFT or evidence.filter(source_message_id=message_id).exists():
+    if row.status not in INGEST_STATUSES or evidence.filter(source_message_id=message_id).exists():
         return None
     if evidence.count() >= flow.MAX_ITEMS:
         return "report.limit_items"
@@ -373,6 +375,6 @@ def link(report_id: int) -> None:
 def report_decided(report_id: int, decision_id: int) -> None:
     """Tell the reporter about a moderation decision (approved, rejected, needs info, merged).
 
-    A no-op until Issue 15; queued after every moderation decision commits so that issue only
-    fills this in.
+    Queued after every moderation decision commits. Idempotent; see `notify.notify_decision`.
     """
+    notify.notify_decision(report_id, decision_id)

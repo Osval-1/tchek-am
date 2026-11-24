@@ -264,6 +264,30 @@ class ModerationDecision(models.Model):
     action = models.CharField(max_length=10, choices=Action.choices)
     reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Claimed (set atomically) by whoever sends or queues the reporter's notification; makes
+    # the notify task idempotent.
+    notified_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"ModerationDecision#{self.pk} ({self.action})"
+
+
+class PendingNotification(models.Model):
+    """A decision message held back because the reporter's 24 h reply window had closed.
+
+    Delivered, once, on the reporter's next inbound message (ADR-011: no unsolicited messages).
+    """
+
+    user = models.ForeignKey(BotUser, on_delete=models.CASCADE, related_name="+")
+    report = models.ForeignKey(Report, on_delete=models.CASCADE, related_name="+")
+    decision = models.OneToOneField(
+        ModerationDecision, on_delete=models.CASCADE, related_name="pending_notification"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    delivered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["user", "delivered_at"])]
+
+    def __str__(self) -> str:
+        return f"PendingNotification#{self.pk}"

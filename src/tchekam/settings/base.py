@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "tchekam.ai",
     "tchekam.speech",
     "tchekam.moderation",
+    "tchekam.appeals",
 ]
 
 MIDDLEWARE = [
@@ -139,6 +140,8 @@ CHECKS_PER_DAY = env.int("CHECKS_PER_DAY", default=30)
 
 # Reports a user may submit per local day (withdrawn ones do not count).
 REPORTS_PER_DAY = env.int("REPORTS_PER_DAY", default=3)
+# New appeals a user may submit per local day.
+APPEALS_PER_DAY = env.int("APPEALS_PER_DAY", default=2)
 # Review time quoted to reporters, in hours.
 REVIEW_ETA_HOURS = env.int("REVIEW_ETA_HOURS", default=24)
 

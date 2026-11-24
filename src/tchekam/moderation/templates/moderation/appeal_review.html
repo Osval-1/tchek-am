@@ -1,0 +1,49 @@
+{% extends "moderation/base.html" %}
+{% block title %}Appeal {{ appeal.pk }}{% endblock %}
+{% block content %}
+<h1>Appeal {{ appeal.pk }} <small>({{ appeal.status }})</small></h1>
+<section>
+<h2>Appeal</h2>
+<p>Number: <strong>{{ appeal.phone_number.e164 }}</strong>
+(<span class="band band-{{ band.band }}">{{ band.band }}</span>{% if band.under_appeal %}, under appeal{% endif %})</p>
+<p>Type: {{ appeal.get_kind_display }}{% if appeal.number_acquired_at %}; the appellant says they got the number in {{ appeal.number_acquired_at|date:"F Y" }}{% endif %}.</p>
+<p class="hint">The appellant is the owner of this number as seen by WhatsApp (sender match); there is no stronger proof.</p>
+<h2>Statement</h2>
+<p>{{ appeal.statement|linebreaksbr }}</p>
+<h2>Evidence</h2>
+<ul>
+{% for item in evidence %}<li><a href="{% url 'moderation:appeal_evidence' item.pk %}" target="_blank" rel="noreferrer">File {{ forloop.counter }}</a> ({{ item.mimetype }})</li>
+{% empty %}<li>No files.</li>{% endfor %}
+</ul>
+</section>
+{% if open %}
+<section>
+<h2>Decision</h2>
+<form method="post" action="{% url 'moderation:appeal_decide' appeal.pk %}">
+{% csrf_token %}
+{% if appeal.kind == "wrong" %}
+<p>Approved and pending reports counting against this number. Approving rejects the ones you tick (at least one).</p>
+<table>
+<thead><tr><th></th><th>Reference</th><th>Status</th><th>Type</th><th>Incident</th><th>Decided</th><th></th></tr></thead>
+<tbody>
+{% for r in reports %}
+<tr><td><input type="checkbox" name="report" value="{{ r.pk }}" id="r{{ r.pk }}"></td>
+<td><label for="r{{ r.pk }}">{{ r.reference|default:r.pk }}</label></td><td>{{ r.status }}</td>
+<td>{{ r.scam_type|default:"-" }}</td><td>{{ r.incident_date|default:"-" }}</td><td>{{ r.decided_at|date:"Y-m-d"|default:"-" }}</td>
+<td><a href="{% url 'moderation:review' r.pk %}">Open</a></td></tr>
+{% empty %}<tr><td colspan="7">No live reports to reject: reject this appeal instead.</td></tr>{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p>Approving excludes every report dated before {{ appeal.number_acquired_at|date:"F Y" }} from this number's status.</p>
+{% endif %}
+<p><label>Reason (required to reject; never sent to the appellant)<br>
+<textarea name="reason" rows="3"></textarea></label></p>
+<button class="ok" name="action" value="approve">Approve</button>
+<button class="danger" name="action" value="reject">Reject</button>
+</form>
+</section>
+{% else %}
+<section><p>Decided {{ appeal.decided_at|date:"Y-m-d H:i" }}.</p></section>
+{% endif %}
+{% endblock %}

@@ -31,6 +31,7 @@ LANGUAGES = {"1": BotUser.Language.FR, "2": BotUser.Language.EN, "3": BotUser.La
 REPORT_VERBS = {"report", "signaler", "signalement"}
 REPORT_NOUNS = {"arnaque", "scam"}
 HELP_WORDS = {"help", "aide"}
+APPEAL_WORDS = {"appeal", "contester", "contest"}
 GLOBAL_COMMANDS = {
     "menu": "menu",
     "0": "menu",
@@ -40,6 +41,9 @@ GLOBAL_COMMANDS = {
     "stop group": "group_opt_out",
     "stop groupe": "group_opt_out",
     "stop training": "training_opt_out",
+    "appeal": "appeal",
+    "contester": "appeal",
+    "contest": "appeal",
 }
 # Data-protection requests are honoured even before onboarding and even for blocked users: a
 # group member who never used the bot must be able to opt out with their first message, and
@@ -216,6 +220,11 @@ def _route_idle(ctx: Context) -> list[Reply]:
     if msg.kind not in ("text", "contact"):
         return say(ctx, "common.unsupported")
     numbers = _numbers(msg)
+    if msg.kind == "text" and set(normalize(msg.text).split()) & APPEAL_WORDS:
+        # Someone else's number next to the word ("Contest winner call 677...") is a normal check.
+        short = len((msg.text or "").split()) <= VERB_MAX_WORDS
+        if short and set(numbers) <= {ctx.user.wa_phone}:
+            return dispatch(ctx, "appeal", typed_numbers=numbers)
     if numbers:
         return dispatch(ctx, "check_number", numbers=numbers)
     if msg.kind == "contact":
@@ -237,6 +246,8 @@ def _route_idle(ctx: Context) -> list[Reply]:
         return dispatch(ctx, "report")
     if norm == "5" or (count <= VERB_MAX_WORDS and words & HELP_WORDS):
         return dispatch(ctx, "help")
+    if norm == "6":
+        return dispatch(ctx, "appeal")
     if norm.isdigit() and len(norm) <= 2:  # a menu choice that does not exist
         return _show_menu(ctx)
     return dispatch(ctx, "check_message")

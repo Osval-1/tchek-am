@@ -688,7 +688,20 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - [ ] Every appeal decision writes an audit entry and invalidates the band cache.
 
 **Files likely affected**: `src/tchekam/appeals/*` (new app), `src/tchekam/reputation/service.py`, `src/tchekam/moderation/*`, `tests/appeals/*`
-**Dependencies**: 13, 8
+**Dependencies**: 13, 8
+
+**Implementation note (as built)**:
+- New app `tchekam.appeals`: `Appeal` (extra `draft` status while the chat flow runs; `submitted_at`, `notified_at`, `delivered_at`) and `AppealEvidence` (images and voice notes, stored as-is, no transcription, max 5 files / 10 MB). Reputation reads appeals through its existing hook (`appeals_hook.set_provider`, installed in `AppealsConfig.ready`); reputation does not import appeals (tested).
+- Eligibility: only the sender's own Cameroonian number; allowed when the number's band is not green or it is already under appeal. A number typed with the keyword that differs from the sender's is refused; numbers typed inside the flow are statement text, never a target. One open appeal per number (someone else's open appeal blocks a second one) and per user; `APPEALS_PER_DAY` (default 2).
+- Menu: option 5 stays Help; the appeal is menu **6** (shown in the menu text), also `APPEAL` / `CONTESTER` / `CONTEST`.
+- Month precision: `number_acquired_at` is the first day of the month. Reports with an incident date or submission date strictly before it are excluded; reports on or after it count. Only an approved appeal applies it; the latest approved date wins.
+- Approving a "wrong" appeal requires at least one selected approved report of that number (each rejected through `Report.transition`, reason `appeal`, with a ModerationDecision, trust recompute and the usual reporter notification). Reject needs a reason, which is never sent to the appellant.
+- Moderator pages: `/moderation/appeals/` (queue, review, decide, audited evidence view). The appellant is the owner of the appealed number, so nothing beyond that number is shown and there is no reveal.
+- Notification: claim `notified_at`, send outside any lock if the 24 h window is open, then set `delivered_at`; otherwise it goes out in front of the user's next reply via an after-route hook. `PendingNotification` was not extended (it is bound to ModerationDecision).
+- A "wrong" appeal can reject approved reports (confirmed subject) and pending / needs-info reports of the number (the band counts those too), so a yellow number can be cleared.
+- Reporters whose report is rejected through an appeal get neutral copy (`notify.rejected.after_review`) that mentions neither the appeal nor the appellant. A keyword next to someone else's number (for example "Contest winner call 677...") is a normal number check.
+- **[DECIDE]** Rejecting an approved report through an appeal recomputes the reporter's trust weight like any rejection (current behaviour, kept). Alternative: exclude reports whose latest decision reason is `appeal` in `reports.weighting._counts`, so appeals never lower trust. Not implemented.
+- **Issue 24 (retention) must cover** `Appeal.statement`, `AppealEvidence` rows and blobs, and abandoned `draft` appeals. The appellant's link to the number is proven only by sender-number match (WhatsApp authenticates the sender); there is no stronger proof.
 
 ---
 

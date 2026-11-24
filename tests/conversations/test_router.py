@@ -295,7 +295,7 @@ def test_welcome_is_shown_only_after_language_pick(user):
     assert t("menu.welcome", "en") not in send("0")
 
 
-@pytest.mark.parametrize("digit", ["6", "9", "12"])
+@pytest.mark.parametrize("digit", ["7", "9", "12"])
 def test_menu_digit_out_of_range_reshows_menu(user, calls, digit):
     assert send(digit).startswith(t("menu.main", "en"))
     assert calls == []

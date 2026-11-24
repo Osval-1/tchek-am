@@ -26,6 +26,7 @@ REJECT_KEYS = {
     "insufficient_evidence": "notify.rejected.insufficient_evidence",
     "duplicate": "notify.rejected.duplicate",
     "cannot_verify": "notify.rejected.cannot_verify",
+    "appeal": "notify.rejected.after_review",  # set by appeals; never says why
 }
 
 
@@ -73,7 +74,7 @@ def render(decision: ModerationDecision, lang: str | None, busy: bool = False) -
     return t("notify.reopened", lang, reference=ref)
 
 
-def _window_open(user: BotUser) -> bool:
+def window_open(user: BotUser) -> bool:
     last = user.last_inbound_at
     return last is not None and timezone.now() - last <= timedelta(
         hours=settings.REPLY_WINDOW_HOURS
@@ -128,7 +129,7 @@ def notify_decision(report_id: int, decision_id: int) -> None:
         # channel timeout). It happens inside the transaction so a crash rolls the claim back and
         # nothing is lost; the price is at-least-once: a commit failure after a successful send
         # makes the retry send the message again.
-        if _window_open(user) and send_to_user(user, text=render(decision, user.language, busy)):
+        if window_open(user) and send_to_user(user, text=render(decision, user.language, busy)):
             if conv is not None and not busy:
                 needs_info.enter(conv, decision.report, decision.created_at)
                 conv.save()

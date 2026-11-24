@@ -4,6 +4,7 @@ Copy rules: never label a person as a scammer or fraudster (see tests/i18n/test_
 Each pcm entry must carry a trailing "# needs native review" marker, enforced by a test.
 """
 
+from .catalog_appeals import APPEAL_COPY
 from .catalog_message import MESSAGE_CHECK_COPY
 
 _PICKER = "Choisissez votre langue / Choose your language / Pick your language:\n1. Français\n2. English\n3. Pidgin"
@@ -22,6 +23,7 @@ CATALOG: dict[str, dict[str, str]] = {
             "3. Vérifier un message\n"
             "4. Signaler une arnaque\n"
             "5. Aide\n"
+            "6. Contester un signalement\n"
             "0 = menu, LANG = langue"
         ),
         "en": (
@@ -31,6 +33,7 @@ CATALOG: dict[str, dict[str, str]] = {
             "3. Check a message\n"
             "4. Report a scam\n"
             "5. Help\n"
+            "6. Contest a report\n"
             "0 = menu, LANG = language"
         ),
         "pcm": (
@@ -40,6 +43,7 @@ CATALOG: dict[str, dict[str, str]] = {
             "3. Check one message\n"
             "4. Report one scam\n"
             "5. Help\n"
+            "6. Contest one report\n"
             "0 = menu, LANG = language"
         ),  # needs native review
     },
@@ -666,6 +670,7 @@ CATALOG: dict[str, dict[str, str]] = {
 }
 
 CATALOG.update(MESSAGE_CHECK_COPY)
+CATALOG.update(APPEAL_COPY)
 
 DEFAULT_LANG = "fr"
 

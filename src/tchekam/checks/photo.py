@@ -11,11 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from django.db import transaction
+from django.utils import timezone
 
 from tchekam.conversations.models import BotUser
 from tchekam.conversations.outbound import send_to_user
 from tchekam.conversations.router import Context, Reply, register_intent, say
 from tchekam.core import redact
+from tchekam.core.tasks import enqueue
 from tchekam.core.tasks import register as register_task
 from tchekam.i18n import month_year, t
 from tchekam.imaging.hashing import ImageRejected
@@ -61,7 +63,8 @@ def summarise(image: Image, matches: list[Match]) -> PhotoResult:
 def _reply_text(result: PhotoResult, lang: str | None) -> str:
     if not result.matched:
         return "\n".join([t("check.photo.no_match", lang), t("check.photo.tips", lang)])
-    when = month_year(result.first_seen, lang)
+    # The month is the Cameroonian one: a UTC timestamp can fall in the neighbouring month.
+    when = month_year(timezone.localtime(result.first_seen), lang)
     if result.number_count == 0:
         lines = [t("check.photo.seen_no_number", lang, when=when)]
     else:
@@ -74,7 +77,15 @@ def _reply_text(result: PhotoResult, lang: str | None) -> str:
 
 
 def after_first_reply(user: BotUser, image: Image) -> None:
-    """Seam for Issue 19: enqueue the web reverse-image search once the internal reply is sent."""
+    """Queue the web reverse-image search once the internal reply is sent. Never raises.
+
+    The caller's catch-all answers "could not process this photo", which would be false here:
+    the user already has their answer and the web check is a bonus.
+    """
+    try:
+        enqueue("imaging.web_check", image_id=image.pk, user_id=user.pk)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("checks.photo: web check not queued: %s", type(exc).__name__)
 
 
 def _download(user: BotUser, message_id: str) -> bytes | None:

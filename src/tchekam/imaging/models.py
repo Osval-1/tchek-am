@@ -73,3 +73,41 @@ class ImageSighting(models.Model):
 
     def __str__(self) -> str:
         return f"Sighting of Image#{self.image_id} ({self.context})"
+
+
+class WebSearchResult(models.Model):
+    """Web matches for one image, keyed by sha256, reused for 30 days (see webcheck.CACHE_DAYS).
+
+    Doubles as what moderators see for report images: unlike Evidence.ai_extraction (rewritten
+    on every extraction) or Evidence.tamper_flags (a list that lowers the evidence score), it
+    is neither overwritten by re-extraction nor counted as tampering. Rows are kept past
+    expiry so the review page can still show the last result.
+    """
+
+    sha256 = models.CharField(max_length=64, unique=True)
+    matches = models.JSONField(default=list)  # WebMatch.to_json() dicts
+    checked_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self) -> str:
+        return f"WebSearchResult {self.sha256[:8]}"
+
+
+class WebSearchUsage(models.Model):
+    """One billable provider call. Counted for the per-user daily cap and the monthly budget."""
+
+    class Purpose(models.TextChoices):
+        SUBMISSION = "submission"
+        REPORT = "report"
+
+    # SET_NULL so erasing a user keeps the spend record without the link to them.
+    user = models.ForeignKey(
+        "conversations.BotUser", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    purpose = models.CharField(max_length=12, choices=Purpose.choices)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [models.Index(fields=["created_at"]), models.Index(fields=["user", "created_at"])]
+
+    def __str__(self) -> str:
+        return f"WebSearchUsage#{self.pk} ({self.purpose})"

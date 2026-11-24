@@ -112,3 +112,58 @@ def test_rejected_report_page_is_read_only_with_reopen_form(staff_client, make_r
 
     assert 'name="reopen_reason"' in html
     assert 'name="confirmed_' not in html and 'name="action" value="approve"' not in html
+
+
+# Web matches (Issue 19) -----------------------------------------------------------------------
+
+
+def _store_matches(sha, matches):
+    from tchekam.imaging.models import WebSearchResult
+
+    WebSearchResult.objects.create(sha256=sha, matches=matches)
+
+
+def test_review_shows_stored_web_matches_escaped_with_safe_links(staff_client, make_report):
+    report = make_report(files=1)
+    ev = report.evidence.get()
+    _store_matches(
+        ev.sha256,
+        [
+            {
+                "url": "https://www.jumia.cm/x?a=1&b=2",
+                "title": "<script>alert(1)</script> Phone",
+                "source_domain": "jumia.cm",
+                "kind": "catalogue",
+            }
+        ],
+    )
+
+    html = staff_client.get(reverse("moderation:review", args=[report.pk])).content.decode()
+
+    assert "Found online (1)" in html
+    assert "jumia.cm" in html and "[catalogue]" in html
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt; Phone" in html
+    assert 'href="https://www.jumia.cm/x?a=1&amp;b=2"' in html
+    assert 'rel="noopener noreferrer nofollow"' in html
+
+
+def test_review_without_a_search_result_shows_no_web_section(staff_client, make_report):
+    report = make_report(files=1)
+
+    html = staff_client.get(reverse("moderation:review", args=[report.pk])).content.decode()
+
+    assert "Found online" not in html
+
+
+def test_review_shows_an_empty_search_result_and_survives_re_extraction(staff_client, make_report):
+    report = make_report(files=1)
+    ev = report.evidence.get()
+    _store_matches(ev.sha256, [])
+    Evidence.objects.filter(pk=ev.pk).update(
+        ai_extraction={"kind": "post"}
+    )  # as re-extraction does
+
+    html = staff_client.get(reverse("moderation:review", args=[report.pk])).content.decode()
+
+    assert "Found online (0)" in html and "No matches found." in html

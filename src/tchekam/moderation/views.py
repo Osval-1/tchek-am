@@ -17,6 +17,7 @@ from tchekam.core.audit import audit
 from tchekam.core.http import client_ip
 from tchekam.core.storage import get_object_store
 from tchekam.identifiers.models import AccountName
+from tchekam.imaging import webcheck
 from tchekam.reports.models import Evidence, Report, ReportLink, ReportSubject
 from tchekam.reports.weighting import is_limited
 from tchekam.reputation.service import band_for_phone
@@ -65,6 +66,18 @@ def queue(request: HttpRequest) -> HttpResponse:
     return _private(render(request, "moderation/queue.html", {"rows": queue_rows()}))
 
 
+MAX_WEB_MATCHES_SHOWN = 10
+
+
+def _with_web_matches(evidence) -> list[Evidence]:
+    """Evidence rows annotated with the web matches stored for their image (any age)."""
+    items = list(evidence)
+    for item in items:
+        found = webcheck.cached_matches(item.sha256) if item.mimetype.startswith("image/") else None
+        item.web_matches = None if found is None else found[:MAX_WEB_MATCHES_SHOWN]
+    return items
+
+
 @staff_required
 @require_GET
 def review(request: HttpRequest, report_id: int) -> HttpResponse:
@@ -99,7 +112,7 @@ def review(request: HttpRequest, report_id: int) -> HttpResponse:
         }
     context = {
         "report": report,
-        "evidence": report.evidence.order_by("id"),
+        "evidence": _with_web_matches(report.evidence.order_by("id")),
         "subjects": subjects,
         "bands": bands,
         "linked": linked,

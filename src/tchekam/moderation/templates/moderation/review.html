@@ -17,6 +17,13 @@
     <a href="{% url 'moderation:evidence' ev.pk %}">Open file {{ ev.pk }} ({{ ev.mimetype }})</a>
   {% endif %}
   <figcaption class="hint">#{{ ev.pk }} {{ ev.kind }}{% if ev.tamper_flags %} - tamper flags: {{ ev.tamper_flags|join:", " }}{% endif %}</figcaption>
+  {% if ev.web_matches is not None %}
+  <details class="web-matches"><summary>Found online ({{ ev.web_matches|length }}) <span class="hint">reverse image search, unverified</span></summary>
+  <ul>{% for m in ev.web_matches %}
+    <li>[{{ m.kind }}] {{ m.source_domain }} - <a href="{{ m.url }}" rel="noopener noreferrer nofollow" referrerpolicy="no-referrer" target="_blank">{{ m.title|default:"(no title)" }}</a></li>
+  {% empty %}<li>No matches found.</li>{% endfor %}</ul>
+  </details>
+  {% endif %}
 </figure>
 {% empty %}<p>No files.</p>{% endfor %}
 </div>

@@ -22,6 +22,8 @@ REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 # Voice notes need Whisper; an empty key would turn every transcription into a silent failure.
 GROQ_API_KEY = env("GROQ_API_KEY")
+# Web image search; an empty key would make every search fail without a trace.
+SERPAPI_API_KEY = env("SERPAPI_API_KEY")
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

@@ -36,6 +36,17 @@ def fake_speech():
 
 
 @pytest.fixture
+def fake_web():
+    """The FakeWebImageSearch singleton behind get_web_search() when WEB_SEARCH_BACKEND="fake"."""
+    from tchekam.imaging.web import FakeWebImageSearch
+
+    web = FakeWebImageSearch.instance()
+    web.reset()
+    yield web
+    web.reset()
+
+
+@pytest.fixture
 def object_store():
     """The shared InMemoryObjectStore that get_object_store() returns under the "memory" backend."""
     from tchekam.core.storage import InMemoryObjectStore

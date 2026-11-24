@@ -159,6 +159,14 @@ GROQ_API_KEY = env("GROQ_API_KEY", default="")
 GROQ_BASE_URL = env("GROQ_BASE_URL", default="https://api.groq.com/openai/v1")
 SPEECH_MODEL = env("SPEECH_MODEL", default="whisper-large-v3")
 
+# Web reverse image search: "serpapi" (Google Lens via SerpAPI) or "fake" (tests, offline dev).
+WEB_SEARCH_BACKEND = env("WEB_SEARCH_BACKEND", default="serpapi")
+SERPAPI_API_KEY = env("SERPAPI_API_KEY", default="")
+# Per user and local day, for photo checks only (report images bypass it).
+WEB_SEARCH_PER_USER_DAY = env.int("WEB_SEARCH_PER_USER_DAY", default=5)
+# Provider calls per local month, report images included; a cache hit never counts.
+WEB_SEARCH_MONTHLY_BUDGET = env.int("WEB_SEARCH_MONTHLY_BUDGET", default=1000)
+
 # Number of trusted reverse proxies in front of Django. 0: ignore X-Forwarded-For and use
 # REMOTE_ADDR. N: the client IP is the N-th entry from the RIGHT of X-Forwarded-For (the one our
 # outermost proxy appended; anything further left can be forged). Render: set 1 (verify at

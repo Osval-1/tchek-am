@@ -238,3 +238,43 @@ def test_follow_up_seam_runs_after_the_reply(bot, monkeypatch):
 
 def test_follow_up_seam_default_is_a_no_op(bot):
     assert photo.after_first_reply(bot.user, Image(sha256="x")) is None
+
+
+# Web follow-up (Issue 19) ---------------------------------------------------------------------
+
+
+def test_catalogue_match_adds_one_followup_after_the_reply(bot, fake_web):
+    from tchekam.imaging.web import WebMatch
+
+    fake_web.results.append([WebMatch("https://www.jumia.cm/x", "Phone", "jumia.cm", "catalogue")])
+
+    texts = send_photo(bot, structured_image(4))
+
+    assert "No matches in our database yet" in texts[1]
+    assert texts[2] == "🔎 This photo also appears online: jumia.cm"
+    assert len(texts) == 3
+    assert_clean(texts)
+
+
+def test_web_check_failure_never_becomes_a_could_not_process_reply(bot, fake_web, monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError("queue down")
+
+    monkeypatch.setattr(photo, "enqueue", boom)
+
+    texts = send_photo(bot, structured_image(4))
+
+    assert t("check.photo.failed", "en") not in texts
+    assert "No matches in our database yet" in texts[1]
+    assert len(texts) == 2
+
+
+def test_month_in_the_reply_is_the_local_month(bot, monkeypatch):
+    from datetime import UTC, datetime
+
+    from tchekam.checks.photo import PhotoResult, _reply_text
+
+    # 23:30 UTC on 31 Jan is already February in Cameroon (UTC+1).
+    result = PhotoResult(1, datetime(2026, 1, 31, 23, 30, tzinfo=UTC), False)
+
+    assert "February 2026" in _reply_text(result, "en")

@@ -21,6 +21,7 @@ from tchekam.core.storage import ObjectNotFoundError, get_object_store, new_key
 from tchekam.core.tasks import register
 from tchekam.i18n import t
 from tchekam.identifiers.models import get_or_create_account_name, get_or_create_phone
+from tchekam.imaging import webcheck
 from tchekam.messaging.channel import ChannelError, MediaTooLarge, get_channel
 from tchekam.messaging.models import InboundEvent
 from tchekam.messaging.parser import parse_wasender_payload
@@ -214,6 +215,32 @@ def _keep(report_id: int, message_id: str, stored: _Stored) -> str | None:
         item.tamper_flags = [DUPLICATE_EVIDENCE]
     item.save()
     return ACK
+
+
+# Web check ------------------------------------------------------------------------------------
+
+# Chat and payment screenshots show the victim's own data and give a reverse search nothing to
+# find, so they are never sent to the search provider; photos and unclassified images are.
+WEB_SEARCH_SKIP_KINDS = (Evidence.Kind.CHAT, Evidence.Kind.MOMO_SMS)
+
+
+@register("reports.web_check")
+def web_check(report_id: int) -> None:
+    """Reverse-search the report's photos for the moderator. Never raises; results land in the
+    sha256-keyed cache that the review page reads (see imaging.models.WebSearchResult)."""
+    report = Report.objects.select_related("reporter").filter(pk=report_id).first()
+    if report is None:
+        return
+    items = report.evidence.filter(mimetype__startswith="image/").exclude(
+        kind__in=WEB_SEARCH_SKIP_KINDS
+    )
+    for item in items.order_by("created_at", "pk"):
+        try:
+            webcheck.lookup(
+                item.sha256, item.object_key, user=report.reporter, purpose=webcheck.REPORT
+            )
+        except Exception as exc:  # noqa: BLE001 - one bad image must not stop the others
+            _log("web_check", report_id, type(exc).__name__)
 
 
 # Extract --------------------------------------------------------------------------------------

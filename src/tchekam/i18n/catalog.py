@@ -233,6 +233,11 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "Tips: a photo found online may not be the real product. Ask for a fresh photo or video, prefer cash on delivery, and send me the seller's number to check it.",
         "pcm": "Tips: photo wey dey online fit no be di real product. Ask for fresh photo or video, better pay when dem deliver, and send me di seller number make I check am.",  # needs native review
     },
+    "check.photo.online": {
+        "fr": "🔎 Cette photo apparaît aussi en ligne : {domains}",
+        "en": "🔎 This photo also appears online: {domains}",
+        "pcm": "🔎 Dis photo dey online too: {domains}",  # needs native review
+    },
     "check.photo.failed": {
         "fr": "Je n'ai pas pu traiter cette photo. Renvoyez-la, ou tapez 0 pour le menu.",
         "en": "I could not process this photo. Please send it again, or type 0 for the menu.",

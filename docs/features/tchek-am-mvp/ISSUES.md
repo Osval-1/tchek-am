@@ -585,7 +585,9 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - [ ] Report images get `web_matches` stored and visible on the review page.
 
 **Files likely affected**: `src/tchekam/imaging/{web,serpapi,tasks,models}.py`, `src/tchekam/moderation/templates/*`, `tests/imaging/test_web.py`
-**Dependencies**: 18
+**Dependencies**: 18
+
+**Implementation note (as built):** web matches are stored in `WebSearchResult` (keyed by sha256), not in `tamper_flags`/`ai_extraction`. Chat and MoMo/OM SMS screenshots in reports are deliberately NOT sent to the web search, so victims' own data is not uploaded to Google via SerpAPI. Photos and unclassified report images are always searched. The privacy notice must list SerpAPI/Google as a processor of submitted photos.
 
 ---
 

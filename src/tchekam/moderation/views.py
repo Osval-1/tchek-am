@@ -18,6 +18,7 @@ from tchekam.core.http import client_ip
 from tchekam.core.storage import get_object_store
 from tchekam.identifiers.models import AccountName
 from tchekam.reports.models import Evidence, Report, ReportLink, ReportSubject
+from tchekam.reports.weighting import is_limited
 from tchekam.reputation.service import band_for_phone
 
 from . import service
@@ -93,6 +94,8 @@ def review(request: HttpRequest, report_id: int) -> HttpResponse:
             "pending": counts.get("pending", 0) + counts.get("needs_info", 0),
             "trust_weight": reporter.trust_weight,
             "blocked": reporter.blocked,
+            # Counts only: a warning must not reveal more about the reporter than the history does.
+            "limited": is_limited(reporter.trust_weight, counts.get("rejected", 0)),
         }
     context = {
         "report": report,

@@ -11,6 +11,7 @@ from django.http import QueryDict
 from django.test import TestCase
 from django.utils import timezone
 
+from tchekam.conversations.models import BotUser
 from tchekam.core.audit import AuditLog
 from tchekam.i18n import t
 from tchekam.identifiers.models import get_or_create_phone
@@ -426,6 +427,39 @@ def test_round_trip_need_info_image_done_back_to_pending(bot, mod):
     ).exists()
     assert cache.get(cache_key(SELLER)) is None
     assert band_for_phone(SELLER).band == Band.YELLOW
+
+
+def test_resubmission_enqueues_linking_and_links_the_new_evidence(bot, mod, monkeypatch):
+    from tchekam.conversations import service as conv_service
+    from tchekam.reports.models import ReportLink
+
+    queued = []
+    original = conv_service.enqueue
+    monkeypatch.setattr(
+        conv_service, "enqueue", lambda name, **kw: (queued.append(name), original(name, **kw))
+    )
+    report, _ = _ask(bot, mod)
+    twin = Report.objects.create(
+        reporter=BotUser.objects.create(wa_phone="+237600000999"),
+        status="pending",
+        reference="TA-00043",
+        submitted_at=timezone.now(),
+    )
+    ReportSubject.objects.create(
+        report=twin, phone_number=get_or_create_phone(SELLER), role="seller", source="ai",
+        confirmed=False,
+    )  # fmt: skip
+    bot.image(png("blue"))
+    bot.text("The seller also wrote me from another phone")  # a story is a scoring signal
+    queued.clear()
+
+    with TestCase.captureOnCommitCallbacks(execute=True):
+        bot.text("DONE")
+
+    assert "reports.link" in queued
+    assert ReportLink.objects.filter(reason="same_number").count() == 1
+    report.refresh_from_db()
+    assert report.evidence_score == pytest.approx(0.1)  # re-scored after the extra story
 
 
 def test_done_without_new_content_asks_again(bot, mod):

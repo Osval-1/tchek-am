@@ -98,6 +98,7 @@ def _finish(ctx: Context, report: Report) -> list[Reply]:
         return say(ctx, "report.needs_info.need_content")
     report.transition(Report.Status.PENDING, actor=None, reason="reporter answered")
     ctx.conversation.reset()
+    ctx.enqueue_after("reports.link", report_id=report.pk)  # new evidence may link or re-score
     return say(ctx, "report.needs_info.resubmitted", reference=report.reference or f"#{report.pk}")
 
 

@@ -19,6 +19,7 @@ from tchekam.core.tasks import enqueue
 from tchekam.identifiers.models import get_or_create_account_name, get_or_create_phone
 from tchekam.reports.models import ModerationDecision, Report, ReportSubject
 from tchekam.reports.transitions import InvalidTransition, check_transition
+from tchekam.reports.weighting import recompute as recompute_trust
 from tchekam.reputation.service import invalidate_phone, invalidate_report
 
 from .forms import DecisionForm, EditForm, error_messages
@@ -235,9 +236,12 @@ def decide(
                 report.transition(TARGET_STATUS[action], actor=actor, reason=code)
         except InvalidTransition as exc:
             raise ModerationError([f"Not allowed: {exc}."]) from exc
-        if edit.changed:
-            # The status signal covers the transition; subject/proof edits need this explicit call.
-            _invalidate_after_commit(report, edit.phones)
+        # Same transaction as the decision, so the weight never disagrees with report statuses.
+        trust_phones = recompute_trust(report.reporter) if report.reporter_id else set()
+        if edit.changed or trust_phones:
+            # The status signal covers the transition; subject/proof edits and a changed
+            # reporter weight (it feeds other numbers' bands) need this explicit call.
+            _invalidate_after_commit(report, edit.phones | trust_phones)
         transaction.on_commit(
             lambda: enqueue("notify.report_decided", report_id=report.pk, decision_id=decision.pk)
         )

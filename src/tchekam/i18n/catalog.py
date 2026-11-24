@@ -485,6 +485,11 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "You have reached the limit of {n} reports per day. Please try again tomorrow.",
         "pcm": "You don reach di limit of {n} reports for one day. Abeg try again tomorrow.",  # needs native review
     },
+    "report.limit_reached_weekly": {
+        "fr": "Pour le moment, vous pouvez envoyer un seul signalement par semaine. Merci de réessayer plus tard.",
+        "en": "For now you can send one report per week. Please try again later.",
+        "pcm": "For now you fit send only one report for one week. Abeg try again later.",  # needs native review
+    },
     "report.submitted": {
         "fr": "✅ Merci, votre signalement est enregistré. Référence : {reference}\nIl attend la relecture du modérateur (en général sous {hours} h). Nous vous écrirons ici dès qu'il y aura une décision.",
         "en": "✅ Thank you, your report is recorded. Reference: {reference}\nIt is waiting for review by the moderator (usually within {hours} hours). We will message you here as soon as there is an outcome.",

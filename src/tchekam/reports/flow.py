@@ -18,7 +18,6 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
@@ -39,7 +38,7 @@ from tchekam.i18n import t
 from tchekam.identifiers.models import get_or_create_phone
 from tchekam.identifiers.phone import normalize_cm_number
 
-from .limits import daily_limit_reached
+from .limits import limit_notice
 from .models import Evidence, Report, ReportSubject
 
 logger = logging.getLogger(__name__)
@@ -141,8 +140,8 @@ def _start_report(ctx: Context) -> list[Reply]:
     resumed = needs_info.resume(ctx, _carried_media(ctx))
     if resumed is not None:
         return resumed
-    if daily_limit_reached(ctx.user):  # refuse early, before the user gathers evidence
-        return say(ctx, "report.limit_reached", n=settings.REPORTS_PER_DAY)
+    if notice := limit_notice(ctx.user):  # refuse early, before the user gathers evidence
+        return say(ctx, notice[0], **notice[1])
     carry = _carried_media(ctx)
     recent = timezone.now() - RESUME_WINDOW
     draft = (

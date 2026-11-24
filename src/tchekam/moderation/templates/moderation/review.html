@@ -132,6 +132,7 @@
 <h2>Reporter</h2>
 {% if history %}
 <p>Approved {{ history.approved }}, rejected {{ history.rejected }}, pending {{ history.pending }}; trust weight {{ history.trust_weight|floatformat:2 }}{% if history.blocked %}; <strong>blocked</strong>{% endif %}.</p>
+{% if history.limited %}<p class="warning"><strong>Warning:</strong> low-trust reporter (weight under 0.3, 3 or more rejections). Limited to 1 report per week; their reports do not count as independent.</p>{% endif %}
 <form method="post" action="{% url 'moderation:reveal' report.pk %}">{% csrf_token %}
 <button type="submit">Reveal reporter number (audit-logged)</button></form>
 {% else %}<p>The reporter's data has been erased.</p>{% endif %}

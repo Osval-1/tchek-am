@@ -27,7 +27,9 @@ from tchekam.messaging.parser import parse_wasender_payload
 from tchekam.speech.base import get_speech_to_text
 
 from . import flow, hooks, notify
+from .linking import link_report, reused_from_other_reporter
 from .models import Evidence, Report, ReportSubject
+from .scoring import refresh_evidence_score
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,7 @@ EVIDENCE_KINDS = {
     "post": Evidence.Kind.POST,
     "other": Evidence.Kind.OTHER,
 }
+DUPLICATE_EVIDENCE = "duplicate_evidence"
 FAILED = "report.file_failed"
 ACK = "report.ack"
 
@@ -195,7 +198,7 @@ def _keep(report_id: int, message_id: str, stored: _Stored) -> str | None:
         return "report.limit_items"
     if _used_bytes(report_id) + stored.size > MAX_TOTAL_BYTES:
         return "report.limit_size"
-    Evidence.objects.create(
+    item = Evidence(
         report=row,
         kind=stored.kind,
         object_key=stored.key,
@@ -206,6 +209,10 @@ def _keep(report_id: int, message_id: str, stored: _Stored) -> str | None:
         transcript_confidence=stored.confidence,
         source_message_id=message_id,
     )
+    # Flagged at ingest, while the sha256 is in hand; the score reads the flag later.
+    if reused_from_other_reporter(item):
+        item.tamper_flags = [DUPLICATE_EVIDENCE]
+    item.save()
     return ACK
 
 
@@ -361,10 +368,15 @@ def _needs_details(report: Report, extraction: Extraction) -> bool:
 
 @register("reports.link")
 def link(report_id: int) -> None:
-    """Find related reports (same number, name, image or text) once a report is submitted.
+    """Refresh the evidence score and link related reports (number, name, image, text).
 
-    A no-op until Issue 16; queued from the submit step so that issue only fills this in.
+    Queued when a report is submitted and when it returns from needs_info; idempotent.
     """
+    report = Report.objects.filter(pk=report_id).first()
+    if report is None:
+        return
+    refresh_evidence_score(report)
+    link_report(report)
 
 
 # Notify ------------------------------------------------------------------------------------------

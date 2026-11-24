@@ -159,6 +159,9 @@ def test_call_log_has_no_content_fields():
         "success",
         "error",
         "request_id",
+        "serving_provider",
+        "agent_run",
+        "call_id",
         "created_at",
     }
 

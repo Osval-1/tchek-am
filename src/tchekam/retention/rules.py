@@ -452,3 +452,7 @@ RULES: tuple[Rule, ...] = (
     group_sightings,
     appeal_statements,
 )
+
+from tchekam.ai.agent.retention import rules as agent_rules  # noqa: E402
+
+RULES += agent_rules()

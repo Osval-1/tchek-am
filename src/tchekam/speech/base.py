@@ -34,4 +34,8 @@ def get_speech_to_text() -> SpeechToText:
         from .groq import GroqWhisper
 
         return GroqWhisper()
+    if backend == "openrouter":
+        from .openrouter import OpenRouterSTT
+
+        return OpenRouterSTT()
     raise ValueError(f"Unknown SPEECH_BACKEND: {backend!r}")

@@ -8,6 +8,7 @@ class CheckLog(models.Model):
         NUMBER = "number"
         IMAGE = "image"
         MESSAGE = "message"
+        NAME = "name"
 
     class Band(models.TextChoices):
         GREEN = "green"

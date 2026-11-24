@@ -4,6 +4,7 @@ Copy rules: never label a person as a scammer or fraudster (see tests/i18n/test_
 Each pcm entry must carry a trailing "# needs native review" marker, enforced by a test.
 """
 
+from .catalog_agent import AGENT_COPY
 from .catalog_appeals import APPEAL_COPY
 from .catalog_message import MESSAGE_CHECK_COPY
 
@@ -676,6 +677,8 @@ CATALOG: dict[str, dict[str, str]] = {
 
 CATALOG.update(MESSAGE_CHECK_COPY)
 CATALOG.update(APPEAL_COPY)
+
+CATALOG.update(AGENT_COPY)
 
 DEFAULT_LANG = "fr"
 

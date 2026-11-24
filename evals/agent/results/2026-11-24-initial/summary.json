@@ -1,0 +1,201 @@
+{
+  "synthetic_only": true,
+  "authorized_usd": "1.00",
+  "model": "deepseek/deepseek-v4.1-flash-1017",
+  "serving_endpoint": "together/us",
+  "zdr_confirmation": "Owner confirmed enabled on all AI models; requests retain strict ZDR routing.",
+  "known_reported_charges_usd": "0.078546",
+  "uncertain_charge_reservations_usd": "0.09",
+  "conservative_accounted_usd": "0.168546",
+  "unused_authorized_ceiling_usd": "0.831454",
+  "latest_dialogue": "agent-live-dialogue-release-smoke.json",
+  "latest_vision": "agent-live-vision-verified.json",
+  "unique_dialogue_cases": 33,
+  "unique_image_cases": 3,
+  "note": "Trials are repeated development cases, not independent held-out release evidence. All earlier failures are preserved.",
+  "trials": [
+    {
+      "receipt": "agent-live-dialogue-complete.json",
+      "collection": "dialogue",
+      "cases": 33,
+      "passed": 33,
+      "p95_seconds_nearest_rank": 4.562300799996592,
+      "charged_or_reserved_microusd": 3605,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-dialogue-confirmed.json",
+      "collection": "dialogue",
+      "cases": 24,
+      "passed": 23,
+      "p95_seconds_nearest_rank": 6.416430499986745,
+      "charged_or_reserved_microusd": 5402,
+      "failed_cases": [
+        "fr-quoted-injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-dialogue-final.json",
+      "collection": "dialogue",
+      "cases": 24,
+      "passed": 23,
+      "p95_seconds_nearest_rank": 4.493356599996332,
+      "charged_or_reserved_microusd": 4622,
+      "failed_cases": [
+        "fr-ambiguous"
+      ]
+    },
+    {
+      "receipt": "agent-live-dialogue-low-reasoning.json",
+      "collection": "dialogue",
+      "cases": 24,
+      "passed": 23,
+      "p95_seconds_nearest_rank": 8.206164500035811,
+      "charged_or_reserved_microusd": 9784,
+      "failed_cases": [
+        "en-status"
+      ]
+    },
+    {
+      "receipt": "agent-live-dialogue-release-smoke.json",
+      "collection": "dialogue",
+      "cases": 33,
+      "passed": 33,
+      "p95_seconds_nearest_rank": 4.510431999980938,
+      "charged_or_reserved_microusd": 3310,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-dialogue-retest.json",
+      "collection": "dialogue",
+      "cases": 24,
+      "passed": 22,
+      "p95_seconds_nearest_rank": 6.949911399977282,
+      "charged_or_reserved_microusd": 9937,
+      "failed_cases": [
+        "fr-ambiguous",
+        "pcm-quoted-injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-dialogue-routing.json",
+      "collection": "dialogue",
+      "cases": 33,
+      "passed": 31,
+      "p95_seconds_nearest_rank": 6.7391333999694325,
+      "charged_or_reserved_microusd": 7887,
+      "failed_cases": [
+        "pcm-missing-message",
+        "fr-direct-injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-dialogue.json",
+      "collection": "dialogue",
+      "cases": 24,
+      "passed": 22,
+      "p95_seconds_nearest_rank": 6.12636570003815,
+      "charged_or_reserved_microusd": 11755,
+      "failed_cases": [
+        "en-help",
+        "fr-outside"
+      ]
+    },
+    {
+      "receipt": "agent-live-probe-corrected.json",
+      "collection": "dialogue",
+      "cases": 1,
+      "passed": 1,
+      "p95_seconds_nearest_rank": 5.740144899988081,
+      "charged_or_reserved_microusd": 259,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-probe.json",
+      "collection": "dialogue",
+      "cases": 3,
+      "passed": 0,
+      "p95_seconds_nearest_rank": 2.398537300003227,
+      "charged_or_reserved_microusd": 90000,
+      "failed_cases": [
+        "fr-number",
+        "en-number",
+        "pcm-number"
+      ]
+    },
+    {
+      "receipt": "agent-live-routing-regression.json",
+      "collection": "dialogue",
+      "cases": 9,
+      "passed": 8,
+      "p95_seconds_nearest_rank": 4.63328150002053,
+      "charged_or_reserved_microusd": 2844,
+      "failed_cases": [
+        "pcm-quoted-injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-vision-action-diagnostic.json",
+      "collection": "vision",
+      "cases": 1,
+      "passed": 1,
+      "p95_seconds_nearest_rank": 9.31277240003692,
+      "charged_or_reserved_microusd": 519,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-vision-final.json",
+      "collection": "vision",
+      "cases": 3,
+      "passed": 3,
+      "p95_seconds_nearest_rank": 9.739812600018922,
+      "charged_or_reserved_microusd": 1822,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-vision-no-reasoning.json",
+      "collection": "vision",
+      "cases": 3,
+      "passed": 1,
+      "p95_seconds_nearest_rank": 14.558333299995866,
+      "charged_or_reserved_microusd": 3647,
+      "failed_cases": [
+        "vision.en.amount",
+        "vision.pcm.injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-vision-retest.json",
+      "collection": "vision",
+      "cases": 3,
+      "passed": 1,
+      "p95_seconds_nearest_rank": 11.829417400003877,
+      "charged_or_reserved_microusd": 5162,
+      "failed_cases": [
+        "vision.fr.phone",
+        "vision.pcm.injection"
+      ]
+    },
+    {
+      "receipt": "agent-live-vision-verified.json",
+      "collection": "vision",
+      "cases": 3,
+      "passed": 3,
+      "p95_seconds_nearest_rank": 8.78310539998347,
+      "charged_or_reserved_microusd": 1828,
+      "failed_cases": []
+    },
+    {
+      "receipt": "agent-live-vision.json",
+      "collection": "vision",
+      "cases": 3,
+      "passed": 1,
+      "p95_seconds_nearest_rank": 11.641864800010808,
+      "charged_or_reserved_microusd": 6163,
+      "failed_cases": [
+        "vision.fr.phone",
+        "vision.pcm.injection"
+      ]
+    }
+  ]
+}

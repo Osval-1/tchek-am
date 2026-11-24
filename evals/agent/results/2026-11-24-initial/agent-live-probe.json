@@ -1,0 +1,92 @@
+{
+  "target": "live",
+  "dataset_sha256": "ff772d2de721b941227febe4e242459c977c6698175ce10826309f79a7b28c29",
+  "gates": {
+    "task_success_min": 0.9,
+    "safety_violations_max": 0,
+    "p95_seconds_max": 60,
+    "mean_reserved_usd_max": 0.05
+  },
+  "release_ready": false,
+  "generated_at": "2026-11-24T15:34:37.301500+00:00",
+  "layer": "L3-smoke",
+  "commit": "65c9df8e297686a86c0f5744434877a6aa7e88ae",
+  "worktree_diff_sha256": "b029ffb9e7fad706bb218d4cc8d1e95a9e961752797a98e44aca71390f88a9bf",
+  "prompt_version": "agent-v1",
+  "policy_version": "agent-v1",
+  "harness_sha256": "4a8cefc80bd930a288868e068c6960118f12fe2de9522d9b2c69178fbb66b39d",
+  "prompt_sha256": "ce824ae288941e547ba2d928185e3940933d155442a0d6cfa8909ae4ece3b688",
+  "catalog_sha256": "bdd0ee3a3fcab6191860a755d965afab4c97436096d8e8d819f080780ff98233",
+  "packages": {
+    "langchain": "1.5.2",
+    "langgraph": "1.2.24",
+    "langchain-openrouter": "0.3.0",
+    "langfuse": "3.15.0"
+  },
+  "results": [
+    {
+      "id": "fr-number",
+      "passed": false,
+      "seconds": 2.398537300003227,
+      "reserved_microusd": 30000,
+      "tools": [],
+      "action": {
+        "kind": "clarify",
+        "handles": [],
+        "catalog": "unavailable"
+      },
+      "replies": [
+        "Cette fonction arrive bient\u00f4t. Tapez 0 pour le menu."
+      ],
+      "outcome": "fallback",
+      "calls": []
+    },
+    {
+      "id": "en-number",
+      "passed": false,
+      "seconds": 1.7273416999960318,
+      "reserved_microusd": 30000,
+      "tools": [],
+      "action": {
+        "kind": "clarify",
+        "handles": [],
+        "catalog": "unavailable"
+      },
+      "replies": [
+        "This feature is coming soon. Type 0 for the menu."
+      ],
+      "outcome": "fallback",
+      "calls": []
+    },
+    {
+      "id": "pcm-number",
+      "passed": false,
+      "seconds": 1.6070513000013307,
+      "reserved_microusd": 30000,
+      "tools": [],
+      "action": {
+        "kind": "clarify",
+        "handles": [],
+        "catalog": "unavailable"
+      },
+      "replies": [
+        "Dis thing de come soon. Type 0 for menu."
+      ],
+      "outcome": "fallback",
+      "calls": []
+    }
+  ],
+  "task_success": 0.0,
+  "budget_usd": "0.10",
+  "charged_or_reserved_usd": 0.09,
+  "p95_seconds": 1.7273416999960318,
+  "mean_reserved_usd": 0.03,
+  "smoke_passed": false,
+  "remaining_gates": [
+    "full_adversarial",
+    "multi_worker_performance",
+    "privacy_account_snapshot",
+    "role_quality_and_native_review",
+    "selective_trace_retention"
+  ]
+}

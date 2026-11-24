@@ -1,0 +1,58 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	claim_turn(claim_turn)
+	authorize_turn(authorize_turn)
+	load_memory(load_memory)
+	prepare_input(prepare_input)
+	transcribe_audio(transcribe_audio)
+	build_context(build_context)
+	before_agent(before_agent)
+	agent(agent)
+	validate_response_action(validate_response_action)
+	render_response(render_response)
+	guard_out(guard_out)
+	safe_fallback(safe_fallback)
+	revalidate_turn(revalidate_turn)
+	persist_memory(persist_memory)
+	publish_delivery(publish_delivery)
+	discard_turn(discard_turn)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> claim_turn;
+	agent -.-> safe_fallback;
+	agent -.-> validate_response_action;
+	authorize_turn -.-> load_memory;
+	authorize_turn -.-> safe_fallback;
+	before_agent -.-> agent;
+	before_agent -.-> safe_fallback;
+	build_context -.-> before_agent;
+	build_context -.-> safe_fallback;
+	build_context -.-> validate_response_action;
+	claim_turn --> authorize_turn;
+	guard_out -.-> revalidate_turn;
+	guard_out -.-> safe_fallback;
+	load_memory -.-> prepare_input;
+	load_memory -.-> safe_fallback;
+	persist_memory -.-> discard_turn;
+	persist_memory -.-> publish_delivery;
+	prepare_input -.-> build_context;
+	prepare_input -.-> safe_fallback;
+	prepare_input -.-> transcribe_audio;
+	render_response -.-> guard_out;
+	render_response -.-> safe_fallback;
+	revalidate_turn -.-> discard_turn;
+	revalidate_turn -.-> persist_memory;
+	safe_fallback --> revalidate_turn;
+	transcribe_audio -.-> build_context;
+	transcribe_audio -.-> safe_fallback;
+	validate_response_action -.-> render_response;
+	validate_response_action -.-> safe_fallback;
+	discard_turn --> __end__;
+	publish_delivery --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

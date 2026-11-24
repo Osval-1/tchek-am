@@ -44,7 +44,7 @@ def notify_decision(appeal_id: int) -> None:
     if not claimed:
         return
     # The HTTP send happens after the claim has committed, never under a lock (ADR-017).
-    if window_open(user) and send_to_user(user, text=render(appeal, user.language)):
+    if window_open(user) and send_to_user(user, text=render(appeal, user.language), defer=False):
         Appeal.objects.filter(pk=appeal_id, delivered_at__isnull=True).update(
             delivered_at=timezone.now()
         )

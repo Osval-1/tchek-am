@@ -5,7 +5,7 @@ import pytest
 from tchekam.conversations.models import BotUser
 from tchekam.core import tasks
 from tchekam.i18n import t
-from tchekam.messaging import hooks
+from tchekam.messaging import hooks, outbox
 from tchekam.messaging.models import InboundEvent
 
 URL = "/webhooks/whatsapp"
@@ -88,7 +88,12 @@ def test_valid_payload_stores_one_event_and_enqueues_once(
     assert event.message_id == "MSG-PRIV-1"
     assert event.event == "messages.received"
     assert event.payload == payload("private_text_received")
-    assert enqueued == [("messaging.process_inbound", {"event_id": event.pk})]
+    assert enqueued == [
+        (
+            "messaging.process_inbound",
+            {"queue": "whatsapp", "lock": outbox.lock_for("237670000001"), "event_id": event.pk},
+        )
+    ]
 
 
 @pytest.mark.django_db

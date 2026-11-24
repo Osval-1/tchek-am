@@ -34,6 +34,14 @@ class RateLimited(ChannelError):
         self.retry_after = retry_after
 
 
+class Deferred(RateLimited):
+    """Our own limiter says wait. A RateLimited, so callers treat it like the provider's."""
+
+
+class UnsolicitedMessageBlocked(ChannelError):
+    """The recipient has not written to us within the reply window (ADR-011)."""
+
+
 class MediaTooLarge(ChannelError):
     pass
 
@@ -72,13 +80,33 @@ class MessagingChannel(Protocol):
 
 
 def get_channel() -> MessagingChannel:
+    channel = _base_channel()
+    if not settings.CHANNEL_SAFEGUARDS:
+        return channel
+    from .safe import SafeChannel
+
+    return SafeChannel(channel)
+
+
+def _active_wasender_key() -> str:
+    if not settings.WASENDER_BACKUP_API_KEY:
+        return settings.WASENDER_API_KEY  # no backup configured: skip the database read
+    from .models import ChannelState
+
+    if ChannelState.current() == "backup":
+        return settings.WASENDER_BACKUP_API_KEY
+    return settings.WASENDER_API_KEY
+
+
+def _base_channel() -> MessagingChannel:
     backend = settings.MESSAGING_CHANNEL
     if backend == "fake":
         from .fake import FakeChannel
 
         return FakeChannel.instance()
     if backend == "wasender":
-        return _wasender_channel(settings.WASENDER_API_KEY, settings.WASENDER_BASE_URL)
+        # Keyed by API key below, so a failover switch takes effect on the next call.
+        return _wasender_channel(_active_wasender_key(), settings.WASENDER_BASE_URL)
     raise ValueError(f"Unknown MESSAGING_CHANNEL: {backend!r}")
 
 

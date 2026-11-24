@@ -129,7 +129,10 @@ def notify_decision(report_id: int, decision_id: int) -> None:
         # channel timeout). It happens inside the transaction so a crash rolls the claim back and
         # nothing is lost; the price is at-least-once: a commit failure after a successful send
         # makes the retry send the message again.
-        if window_open(user) and send_to_user(user, text=render(decision, user.language, busy)):
+        # defer=False: a failed send must queue a PendingNotification, not retry in the outbox.
+        if window_open(user) and send_to_user(
+            user, text=render(decision, user.language, busy), defer=False
+        ):
             if conv is not None and not busy:
                 needs_info.enter(conv, decision.report, decision.created_at)
                 conv.save()

@@ -96,3 +96,19 @@ def test_prod_requires_infra_settings(monkeypatch, name):
 
     with pytest.raises(ImproperlyConfigured):
         importlib.reload(prod)
+
+
+def test_prod_refuses_to_start_without_channel_safeguards(monkeypatch):
+    _set_required_env(monkeypatch)
+    monkeypatch.setenv("CHANNEL_SAFEGUARDS", "false")
+    from django.core.exceptions import ImproperlyConfigured
+
+    from tchekam.settings import base, prod
+
+    importlib.reload(base)  # base reads the environment once, at import
+    try:
+        with pytest.raises(ImproperlyConfigured):
+            importlib.reload(prod)
+    finally:
+        monkeypatch.delenv("CHANNEL_SAFEGUARDS")
+        importlib.reload(base)

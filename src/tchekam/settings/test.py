@@ -7,6 +7,8 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 TASKS_EAGER = True
 OBJECT_STORE_BACKEND = "memory"
 MESSAGING_CHANNEL = "fake"
+# The safeguard tests switch this on; everything else sees the bare channel.
+CHANNEL_SAFEGUARDS = False
 AI_BACKEND = "fake"
 EMBEDDER_BACKEND = "fake"
 ANTHROPIC_API_KEY = ""

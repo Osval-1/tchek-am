@@ -187,3 +187,21 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Strict"
 CSRF_COOKIE_SAMESITE = "Strict"
+
+# Typical prices in XAF of common items, used by the message check to spot an amount far below
+# the going rate. Keys are lower-case, accent-free words as they appear in messages. Optional.
+PRICE_HINTS = {
+    "iphone 15": 450000,
+    "iphone 14": 350000,
+    "iphone 13": 250000,
+    "iphone 12": 180000,
+    "iphone 11": 130000,
+    "ps5": 300000,
+    "playstation 5": 300000,
+    "macbook": 450000,
+    "laptop": 150000,
+    "samsung s23": 350000,
+    "samsung s22": 250000,
+}
+# An amount under this share of the hint counts as "far below".
+PRICE_HINT_RATIO = 0.4

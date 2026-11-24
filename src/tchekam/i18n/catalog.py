@@ -198,6 +198,51 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "You sent more than 3 numbers: I checked the first 3.",
         "pcm": "You send more than 3 numbers: I check di first 3.",  # needs native review
     },
+    "check.photo.checking": {
+        "fr": "Je vérifie votre photo, un instant…",
+        "en": "Checking your photo, one moment…",
+        "pcm": "I dey check your photo, wait small…",  # needs native review
+    },
+    "check.photo.no_match": {
+        "fr": "Aucune correspondance dans notre base pour l'instant. Cela ne prouve pas que l'offre est honnête.",
+        "en": "No matches in our database yet. That does not prove the offer is genuine.",
+        "pcm": "No match for our database yet. Dat no mean say di offer dey correct.",  # needs native review
+    },
+    "check.photo.match": {
+        "fr": "Cette photo a été publiée par {n} numéros différents, vue pour la première fois en {when}.",
+        "en": "This photo was posted by {n} different numbers, first seen {when}.",
+        "pcm": "Dem don post dis photo from {n} different numbers, first time dem see am na {when}.",  # needs native review
+    },
+    "check.photo.match_one": {
+        "fr": "Cette photo a été publiée par 1 numéro, vue pour la première fois en {when}.",
+        "en": "This photo was posted by 1 number, first seen {when}.",
+        "pcm": "Dem don post dis photo from 1 number, first time dem see am na {when}.",  # needs native review
+    },
+    "check.photo.seen_no_number": {
+        "fr": "Cette photo est déjà dans notre base (vue pour la première fois en {when}), sans numéro associé.",
+        "en": "This photo is already in our database (first seen {when}), with no number linked to it.",
+        "pcm": "Dis photo dey our database already (first seen {when}), but no number dey with am.",  # needs native review
+    },
+    "check.photo.flagged": {
+        "fr": "⚠ L'un de ces numéros a des signalements examinés.",
+        "en": "⚠ One of these numbers has reviewed reports.",
+        "pcm": "⚠ One of dis numbers get reports wey dem don review.",  # needs native review
+    },
+    "check.photo.tips": {
+        "fr": "Conseils : une photo trouvée en ligne n'est pas le vrai produit. Demandez une photo ou une vidéo récente, préférez le paiement à la livraison, et envoyez-moi le numéro du vendeur pour le vérifier.",
+        "en": "Tips: a photo found online may not be the real product. Ask for a fresh photo or video, prefer cash on delivery, and send me the seller's number to check it.",
+        "pcm": "Tips: photo wey dey online fit no be di real product. Ask for fresh photo or video, better pay when dem deliver, and send me di seller number make I check am.",  # needs native review
+    },
+    "check.photo.failed": {
+        "fr": "Je n'ai pas pu traiter cette photo. Renvoyez-la, ou tapez 0 pour le menu.",
+        "en": "I could not process this photo. Please send it again, or type 0 for the menu.",
+        "pcm": "I no fit process dis photo. Abeg send am again, or type 0 for menu.",  # needs native review
+    },
+    "check.photo.rejected": {
+        "fr": "Ce fichier n'est pas une photo que je peux lire. Envoyez une image JPEG ou PNG.",
+        "en": "That file is not a photo I can read. Please send a JPEG or PNG image.",
+        "pcm": "Dat file no be photo wey I fit read. Abeg send JPEG or PNG image.",  # needs native review
+    },
     "check.limit_reached": {
         "fr": "Vous avez atteint la limite de vérifications pour aujourd'hui. Revenez demain, merci de votre patience.",
         "en": "You've reached today's limit of checks. Please come back tomorrow, and thank you for your patience.",

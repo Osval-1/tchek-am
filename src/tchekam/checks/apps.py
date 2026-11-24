@@ -7,6 +7,7 @@ class ChecksConfig(AppConfig):
 
     def ready(self) -> None:
         # checks depends on conversations (not the reverse), so the intent is plugged in here.
-        from .number import register
+        from . import number, photo
 
-        register()
+        number.register()
+        photo.register()

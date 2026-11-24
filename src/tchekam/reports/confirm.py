@@ -262,9 +262,9 @@ def _training_optin(ctx: Context) -> list[Reply]:
 
 
 def _submit(ctx: Context, report: Report) -> list[Reply]:
-    if limits.daily_limit_reached(ctx.user):
-        ctx.conversation.reset()  # the draft stays; resume works from tomorrow
-        return say(ctx, "report.limit_reached", n=settings.REPORTS_PER_DAY)
+    if notice := limits.limit_notice(ctx.user):
+        ctx.conversation.reset()  # the draft stays; resume works once the limit lifts
+        return say(ctx, notice[0], **notice[1])
     with transaction.atomic():
         row = Report.objects.select_for_update().get(pk=report.pk)
         if row.status != Report.Status.DRAFT:

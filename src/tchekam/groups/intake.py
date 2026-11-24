@@ -18,9 +18,10 @@ import logging
 from django.db import IntegrityError, transaction
 
 from tchekam.ai.product_photo import is_product_photo
+from tchekam.conversations.models import BotUser
 from tchekam.core.tasks import enqueue
 from tchekam.core.tasks import register as register_task
-from tchekam.identifiers.models import get_or_create_phone
+from tchekam.identifiers.models import PhoneNumber, get_or_create_phone
 from tchekam.identifiers.phone import normalize_cm_number
 from tchekam.imaging.hashing import ImageRejected
 from tchekam.imaging.ingest import SightingContext, ingest
@@ -59,20 +60,46 @@ def _leave_once(group_jid: str) -> None:
             get_channel().leave_group(group_jid)
 
 
+def _poster_on_hold(msg: InboundMessage) -> bool:
+    """Legal hold on the poster's account or number: their event is evidence, keep it whole.
+
+    Reads the legal_hold columns directly (groups does not depend on retention).
+    """
+    key = poster_key(msg.sender_phone)
+    if key is None:
+        return False
+    e164 = normalize_cm_number(key) or key
+    return (
+        BotUser.objects.filter(wa_phone=key, legal_hold=True).exists()
+        or PhoneNumber.objects.filter(e164=e164, legal_hold=True).exists()
+    )
+
+
+def _scrub_unless_held(msg: InboundMessage) -> None:
+    if not _poster_on_hold(msg):
+        InboundEvent.scrub_group(msg.message_id)
+
+
 def handle_group_message(msg: InboundMessage) -> None:
     if not msg.group_jid:
         return
+    if _queue_ingest(msg):
+        message_id = msg.message_id
+        transaction.on_commit(lambda: enqueue(TASK, message_id=message_id))
+    else:
+        # Not ingested: the stored event needs neither the poster nor the media key.
+        _scrub_unless_held(msg)
+
+
+def _queue_ingest(msg: InboundMessage) -> bool:
     group = PartnerGroup.objects.filter(group_jid=msg.group_jid).first()
     if group is None:
         _leave_once(msg.group_jid)
-        return
+        return False
     if group.status != PartnerGroup.Status.ACTIVE or msg.kind != "image":
-        return
+        return False
     poster = _poster(msg)
-    if poster is None or is_opted_out(poster[0]):
-        return  # decided before any download
-    message_id = msg.message_id
-    transaction.on_commit(lambda: enqueue(TASK, message_id=message_id))
+    return poster is not None and not is_opted_out(poster[0])  # decided before any download
 
 
 def _group_image(message_id: str) -> tuple[InboundMessage, str, str] | None:
@@ -116,7 +143,23 @@ def _store(data: bytes, group_jid: str, wa_phone: str, e164: str) -> None:
 
 @register_task(TASK)
 def ingest_group_image(message_id: str) -> None:
-    """Download, classify, and keep only product photos. Never raises; logs class names only."""
+    """Download, classify, and keep only product photos. Never raises; logs class names only.
+
+    Whatever the outcome, the stored event is scrubbed afterwards: the job is never retried.
+    """
+    try:
+        _ingest(message_id)
+    finally:
+        try:
+            event = InboundEvent.objects.filter(message_id=message_id).first()
+            msg = parse_wasender_payload(event.payload) if event else None
+            if msg is not None:
+                _scrub_unless_held(msg)
+        except Exception as exc:  # the nightly retention run scrubs it anyway
+            logger.warning("groups.ingest_image: scrub %s", type(exc).__name__)
+
+
+def _ingest(message_id: str) -> None:
     try:
         found = _group_image(message_id)
         if found is None:

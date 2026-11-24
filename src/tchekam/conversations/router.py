@@ -47,9 +47,9 @@ GLOBAL_COMMANDS = {
 }
 # Data-protection requests are honoured even before onboarding and even for blocked users: a
 # group member who never used the bot must be able to opt out with their first message, and
-# blocking someone must never keep their group photos collected. The handler answers without
-# needing a language.
-DATA_PROTECTION_COMMANDS = {"group_opt_out"}
+# blocking someone must never keep their group photos collected or their voice notes used for
+# training. The handlers answer without needing a language.
+DATA_PROTECTION_COMMANDS = {"group_opt_out", "training_opt_out"}
 # Menu digit -> prompt flow that waits for the input, then dispatches the intent.
 MENU_PROMPTS = {
     "1": ("await_number", "prompt.send_number"),

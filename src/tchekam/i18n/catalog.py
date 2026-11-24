@@ -667,6 +667,11 @@ CATALOG: dict[str, dict[str, str]] = {
         "en": "We had no group photos from you. Noted: your group photos will not be collected.",
         "pcm": "We no get any group photo from you. We don note am: we no go collect your group photos.",  # needs native review
     },
+    "training.opt_out.done": {
+        "fr": "C'est noté : vos notes vocales ne serviront plus à améliorer la reconnaissance vocale, et les copies que nous avions gardées pour cela sont supprimées.",
+        "en": "Noted: your voice notes will no longer be used to improve speech recognition, and the copies we kept for that are being deleted.",
+        "pcm": "We don note am: we no go use your voice notes again to make speech recognition better, and we dey delete di copies wey we keep for dat one.",  # needs native review
+    },
 }
 
 CATALOG.update(MESSAGE_CHECK_COPY)

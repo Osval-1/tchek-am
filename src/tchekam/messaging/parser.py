@@ -170,3 +170,24 @@ def storable_payload(payload: dict, msg: InboundMessage) -> dict:
     if msg.timestamp is not None:
         stored["messageTimestamp"] = msg.timestamp
     return {"event": msg.raw_event, "data": {"messages": stored}}
+
+
+def scrubbed_group_payload(payload: Any) -> dict | None:
+    """A stored group payload minus the poster and the media pointers, or None if `payload`
+    is not a redacted group payload (or is already scrubbed).
+
+    Used once a group message is known not to need ingesting (ISSUES.md Issue 20 follow-up c).
+    Keeps the message id, the group jid, the kind marker and the timestamp.
+    """
+    stored = _dict(_dict(_dict(payload).get("data")).get("messages"))
+    if "redacted" not in stored or stored.get("scrubbed") is True:
+        return None
+    scrubbed: dict[str, Any] = {
+        "key": _scalars(_dict(stored.get("key")), ("id", "fromMe", "remoteJid")),
+        "message": {},
+        "redacted": stored["redacted"],
+        "scrubbed": True,
+    }
+    if "messageTimestamp" in stored:
+        scrubbed["messageTimestamp"] = stored["messageTimestamp"]
+    return {"event": payload.get("event"), "data": {"messages": scrubbed}}

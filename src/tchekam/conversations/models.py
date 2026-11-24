@@ -18,6 +18,9 @@ class BotUser(models.Model):
     training_opt_in_asked = models.BooleanField(default=False)
     # Stamped on every inbound message; reminders and retention jobs key off it.
     last_inbound_at = models.DateTimeField(null=True, blank=True)
+    # Police or court request: retention deletes nothing about this user, and the account
+    # cannot be deleted (ADR-013).
+    legal_hold = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:

@@ -2,11 +2,12 @@
 
 from datetime import timedelta
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from tchekam.conversations.models import BotUser
 
+from .keys import reporter_key_for
 from .models import Report, ReportSubject
 
 LIMIT_BELOW_WEIGHT = 0.3
@@ -24,8 +25,11 @@ def is_limited(weight: float, rejected: int) -> bool:
 
 
 def _counts(user: BotUser) -> tuple[int, int]:
+    # By reporter_key as well as the FK: retention drops the FK from approved reports after
+    # 36 months (ISSUES.md Issue 24), and that must not lower the reporter's trust.
+    mine = Q(reporter=user) | Q(reporter_key=reporter_key_for(user.wa_phone))
     counts = dict(
-        Report.objects.filter(reporter=user)
+        Report.objects.filter(mine)
         .filter(status__in=[Report.Status.APPROVED, Report.Status.REJECTED])
         .values_list("status")
         .annotate(n=Count("id"))

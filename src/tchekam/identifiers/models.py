@@ -10,6 +10,8 @@ class PhoneNumber(models.Model):
     operator = models.CharField(max_length=20)
     first_seen = models.DateTimeField(auto_now_add=True)
     check_count = models.PositiveIntegerField(default=0)
+    # Police or court request: retention deletes nothing about this number (ADR-013).
+    legal_hold = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.e164

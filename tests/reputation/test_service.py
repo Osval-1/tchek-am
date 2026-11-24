@@ -230,7 +230,8 @@ def test_erased_reporter_never_becomes_more_reporters():
     assert Report.objects.filter(reporter__isnull=True).count() == 3
     after = band_for_phone(TARGET, now=timezone.now())
     assert before.independent_reporters == 1
-    assert after.independent_reporters == 0  # erased = trust 0: no longer counts on its own
+    # Still one person: the trust stored at erasure (ReporterTrust, Issue 24) keeps them counted.
+    assert after.independent_reporters == 1
     assert before.band == after.band == Band.ORANGE
 
 
@@ -260,12 +261,14 @@ def test_erasing_a_low_trust_reporter_with_proof_does_not_worsen_the_band():
     assert before == Band.ORANGE
 
 
-def test_erasing_a_trusted_reporter_with_proof_lowers_red():
+def test_erasing_a_trusted_reporter_with_proof_keeps_red():
     u = user()
     make_report(reporter=u, has_payment_proof=True)
     assert band() == Band.RED
     u.delete()
-    assert band() == Band.ORANGE  # an erased reporter cannot carry the proof route alone
+    # Their trust survives erasure (ReporterTrust, Issue 24); with no stored record an erased
+    # reporter has trust 0 instead (tests/reputation/test_trust_hook.py).
+    assert band() == Band.RED
 
 
 def test_reports_that_never_had_a_reporter_do_not_count_as_reporters():

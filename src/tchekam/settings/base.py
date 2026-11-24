@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "tchekam.speech",
     "tchekam.moderation",
     "tchekam.appeals",
+    # Last: depends on every app holding personal data, and nothing depends on it.
+    "tchekam.retention",
 ]
 
 MIDDLEWARE = [

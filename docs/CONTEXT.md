@@ -24,6 +24,10 @@ Use these terms consistently in code, copy and docs. Decisions behind them: [ADR
 | **Web match** | A reverse-image-search hit on the open web (SerpAPI now, Google Vision later), sent as a follow-up message. |
 | **Moderator** | The human who approves or rejects reports and appeals. During the pilot this is the founder alone. |
 | **Channel** | The WhatsApp transport behind `MessagingChannel`: WaSender now, Meta Cloud API later. |
-| **Legal hold** | A flag that suspends retention deletion at the request of the police or a court. |
+| **Legal hold** | A flag that suspends retention deletion at the request of the police or a court. Set on a report, a piece of evidence, a number or a user; a held user cannot be deleted. |
+| **Retention run** | The nightly job (02:00 Douala) that applies the retention schedule (ADR-013, ADR-022) and writes one audit entry with counts. |
+| **Minimised report** | A report retention has stripped of evidence and personal fields: rejected after 90 days (minimal record kept until 24 months), approved after 36 months (anonymised: no reporter link). |
+| **Training sample** | A copy of an opted-in voice note kept to improve speech recognition until the user sends STOP TRAINING or is erased. |
+| **Reporter trust record** | `ReporterTrust`: a reporter's trust weight stored under their pseudonymous key, so it survives erasure. |
 | **InboundMessage** | The provider-neutral form of one incoming WhatsApp message (private or group). |
 | **InboundEvent** | One stored raw webhook delivery, keyed by the provider's message id. Status: received / processed / failed / ignored. Kept for 30 days. |

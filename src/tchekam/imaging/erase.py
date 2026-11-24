@@ -35,20 +35,43 @@ def delete_sightings(sightings: QuerySet[ImageSighting]) -> Erased:
         image_ids = sorted(set(sightings.values_list("image_id", flat=True)))
         if not image_ids:
             return Erased(0, 0)
-        # Locked in pk order so two erasures never deadlock each other.
-        list(Image.objects.select_for_update().filter(pk__in=image_ids).order_by("pk").values("pk"))
+        _lock(image_ids)
         count = ImageSighting.objects.filter(pk__in=sightings.values("pk")).delete()[0]
-        deleted: list[Image] = []
-        for image in Image.objects.filter(pk__in=image_ids, sightings__isnull=True).order_by("pk"):
-            try:
-                with transaction.atomic():
-                    image.delete()
-            except ProtectedError:
-                continue  # a report still refers to it
-            deleted.append(image)
-        keys = [image.thumbnail_key for image in deleted if image.thumbnail_key]
-        transaction.on_commit(lambda: _delete_blobs(keys))
-    return Erased(count, len(deleted), [image.sha256 for image in deleted])
+        sha256s = _delete_unreferenced(image_ids)
+    return Erased(count, len(sha256s), sha256s)
+
+
+def delete_unreferenced_images(image_ids: list[int]) -> list[str]:
+    """Delete those of these images that no sighting and no report refers to any more.
+
+    For callers that removed some other reference (a report subject). Same locking and
+    after-commit thumbnail deletion as delete_sightings. Returns the deleted images' sha256s.
+    """
+    with transaction.atomic():
+        image_ids = sorted(set(image_ids))
+        if not image_ids:
+            return []
+        _lock(image_ids)
+        return _delete_unreferenced(image_ids)
+
+
+def _lock(image_ids: list[int]) -> None:
+    # Locked in pk order so two erasures never deadlock each other.
+    list(Image.objects.select_for_update().filter(pk__in=image_ids).order_by("pk").values("pk"))
+
+
+def _delete_unreferenced(image_ids: list[int]) -> list[str]:
+    deleted: list[Image] = []
+    for image in Image.objects.filter(pk__in=image_ids, sightings__isnull=True).order_by("pk"):
+        try:
+            with transaction.atomic():
+                image.delete()
+        except ProtectedError:
+            continue  # a report still refers to it
+        deleted.append(image)
+    keys = [image.thumbnail_key for image in deleted if image.thumbnail_key]
+    transaction.on_commit(lambda: _delete_blobs(keys))
+    return [image.sha256 for image in deleted]
 
 
 def _delete_blobs(keys: list[str]) -> None:

@@ -13,12 +13,13 @@ class UnknownTaskError(KeyError):
 
 
 def register(
-    name: str, *, cron: str | None = None
+    name: str, *, cron: str | None = None, tzinfo: str | None = None
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Register a function as a named task, runnable inline or via the Procrastinate worker.
 
     With `cron`, the worker also defers it on that schedule; such a function takes a leading
-    `timestamp` argument (Procrastinate passes the scheduled time).
+    `timestamp` argument (Procrastinate passes the scheduled time). The cron expression is
+    read in `tzinfo` (an IANA name), or in UTC when it is None.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -27,7 +28,7 @@ def register(
         _REGISTRY[name] = func
         task = app.task(name=name)(func)
         if cron is not None:
-            app.periodic(cron=cron)(task)
+            app.periodic(cron=cron, tzinfo=tzinfo)(task)
         return func
 
     return decorator

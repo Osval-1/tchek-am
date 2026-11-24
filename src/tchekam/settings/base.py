@@ -141,6 +141,9 @@ REPORTS_PER_DAY = env.int("REPORTS_PER_DAY", default=3)
 # Review time quoted to reporters, in hours.
 REVIEW_ETA_HOURS = env.int("REVIEW_ETA_HOURS", default=24)
 
+# Image embeddings: "openclip" (needs the `ml` extra) or "fake" (tests, CI, offline dev).
+EMBEDDER_BACKEND = env("EMBEDDER_BACKEND", default="openclip")
+
 # AI (Claude): "anthropic" (real API) or "fake" (tests, offline dev).
 AI_BACKEND = env("AI_BACKEND", default="anthropic")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")

@@ -20,6 +20,7 @@ Use these terms consistently in code, copy and docs. Decisions behind them: [ADR
 | **Sighting** | One occurrence of an image (from a bot submission or a partner group), with the poster's number and the time. |
 | **Partner group** | A WhatsApp selling group whose admin has consented to group listening. |
 | **Group listening** | The bot silently collecting product-photo sightings in partner groups. No message text is stored. |
+| **Group opt-out** | A number that sent STOP GROUP. All its group sightings are deleted, and its later group images are discarded before download. It works even before onboarding and for blocked users (ADR-019). |
 | **Web match** | A reverse-image-search hit on the open web (SerpAPI now, Google Vision later), sent as a follow-up message. |
 | **Moderator** | The human who approves or rejects reports and appeals. During the pilot this is the founder alone. |
 | **Channel** | The WhatsApp transport behind `MessagingChannel`: WaSender now, Meta Cloud API later. |

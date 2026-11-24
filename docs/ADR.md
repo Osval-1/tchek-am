@@ -382,6 +382,31 @@ Date: 2026-11-23 · Status: **Accepted**
 
 ---
 
+## ADR-019: Group listening implementation
+Date: 2026-11-24 · Status: **Accepted**
+
+**Question:** How is group listening (ADR-012) built so that no group text is kept, the bot never writes to a group, and an opt-out always wins? (This came up while building ISSUES.md Issue 20.)
+
+**Decision:**
+- **Boundary:** the new `tchekam.groups` app plugs into messaging through `messaging.hooks.register_group_handler`, called from its `AppConfig.ready`. Nothing in messaging depends on groups, and a source-scan test checks that no other app imports `tchekam.groups` (imaging imports `PartnerGroup` for type checking only). The handler runs in the `messaging.process_inbound` job, never in the webhook request and never under a Conversation lock. Download, classification and ingest run in a separate queued job, `groups.ingest_image`.
+- **No text at rest:** `messaging.parser.storable_payload` rebuilds every group payload from allow-lists before the webhook saves it. It keeps the key fields (id, fromMe, remoteJid, participant, cleanedParticipantPn), the event name, the timestamp and a kind marker. For an image it also keeps only the media pointers that decrypt-media needs (url, directPath, mimetype, mediaKey, mediaKeyTimestamp, fileSha256, fileEncSha256, fileLength). Message bodies, captions, quoted messages, vCards, display names and thumbnails are never stored. Private payloads are stored as received.
+- **Leaving unconsented groups:** the bot leaves each jid at most once, ever. The `UnconsentedGroupLeave` row (unique jid) is the claim, inserted in the same transaction as the `leave_group` call. A concurrent delivery waits on the unique index and then does not leave again. If the call fails, the claim rolls back and a later message retries. This departs from ADR-012 ("the bot leaves any group it is added to without consent"): a group that adds the bot back after the first leave is ignored but not left (follow-up b in ISSUES.md Issue 20).
+- **Paused and left groups:** a `PartnerGroup` with status paused or left is ignored without leaving, because consent exists or existed.
+- **Posters:** a sighting needs the poster's number. A LID-only sender, or a number that is not Cameroonian, is discarded before download. This is a scope cut against PRD F8 ("every product photo"), recorded here rather than made silently.
+- **Classifier:** `ai` purpose `is_product_photo` (Haiku with vision, strict schema `{is_product: bool}`, prompt v1). Only an explicit true is stored; false, a failure or a refusal discards the bytes. Verdicts are cached for 30 days per prompt version and sha256 in the shared Django cache, and failures are never cached.
+- **Opt-out concurrency:** STOP GROUP and the group ingest serialise on a per-poster `pg_advisory_xact_lock`. The ingest re-checks consent and opt-out inside the lock, so an image being stored while its poster opts out is either deleted by the opt-out or refused by the job. Lock order is always the Conversation row, then the advisory lock, then Image rows `FOR UPDATE` in pk order (`imaging.erase.delete_sightings`). A sighting committed after the erasure locked its image fails the deferred foreign-key check instead of pointing at a deleted image. `groups.intake._store` retries once on that error.
+- **Erasure:** `imaging.erase.delete_sightings` deletes the sightings, then every image left with no sighting, unless a report still refers to it. Thumbnails are deleted from the ObjectStore only after commit.
+- **Group link on sightings:** `ImageSighting.group` is a foreign key to `PartnerGroup` on the existing `group_id` column, with PROTECT, so deleting a group can never leave its sightings behind. Group records are deleted only through the audited admin action "Delete group and all its sightings", which erases the sightings first.
+- **Never writing to a group:** every `send_*` on `MessagingChannel` raises `GroupSendForbidden` for an `@g.us` target unless `allow_group=True` (unused in the MVP). It is deliberately not a `ChannelError`, so code that swallows provider errors cannot hide it. `send_to_user` refuses group targets without raising.
+- **Router policy:** `DATA_PROTECTION_COMMANDS` (today only `group_opt_out`) runs before onboarding and also for blocked users. A group member who never used the bot can opt out with their first message (the reply is in all three languages), and blocking someone never keeps their group photos collected. Blocked users still get nothing for any other message.
+- **Opt-out key:** `GroupOptOut` is keyed on `"+<digits>"`, the `BotUser.wa_phone` convention, so the check before download is one indexed lookup.
+- **Consent records:** the admin requires a notice confirmation, sets the recorder from the logged-in staff member, makes consent fields read-only after creation, and audit-logs every create, change and deletion (field names and counts only).
+- **Group metadata:** `groups.metadata.group_metadata` calls the provider at most once per group per day and keeps only the subject and member count, never the participant list.
+
+**Consequences:** Group text never reaches the database, and the bot cannot post in a group by mistake. Photos posted by group members, most of whom never used the bot, are sent to Anthropic for classification, so the privacy notice and the legal review must name this processing. Group sightings use `seen_at` and the group link for the 24-month retention job (ADR-013, Issue 24). The known gaps are tracked as follow-ups under ISSUES.md Issue 20.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

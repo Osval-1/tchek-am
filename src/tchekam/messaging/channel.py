@@ -39,12 +39,33 @@ class MediaTooLarge(ChannelError):
 
 
 MAX_MEDIA_BYTES = 16 * 1024 * 1024
+GROUP_JID_SUFFIX = "@g.us"
+
+
+class GroupSendForbidden(ValueError):
+    """A send was aimed at a group JID. The bot never posts in groups (ADR-012).
+
+    Deliberately not a ChannelError: callers that swallow provider failures must not hide this.
+    """
+
+
+def is_group_jid(to: str) -> bool:
+    return to.strip().lower().endswith(GROUP_JID_SUFFIX)
+
+
+def refuse_group(to: str, allow_group: bool) -> None:
+    """Every send_* implementation calls this first. `allow_group` is unused in the MVP."""
+    if not allow_group and is_group_jid(to):
+        raise GroupSendForbidden("refusing to send to a group")
 
 
 class MessagingChannel(Protocol):
-    def send_text(self, to: str, text: str) -> None: ...
-    def send_image(self, to: str, image_url: str, caption: str | None = None) -> None: ...
-    def send_typing(self, jid: str, ms: int) -> None: ...
+    # Every send_* raises GroupSendForbidden for a group JID unless allow_group=True.
+    def send_text(self, to: str, text: str, *, allow_group: bool = False) -> None: ...
+    def send_image(
+        self, to: str, image_url: str, caption: str | None = None, *, allow_group: bool = False
+    ) -> None: ...
+    def send_typing(self, jid: str, ms: int, *, allow_group: bool = False) -> None: ...
     def download_media(self, msg: InboundMessage) -> tuple[bytes, str]: ...
     def leave_group(self, group_jid: str) -> None: ...
     def group_metadata(self, group_jid: str) -> dict[str, Any]: ...

@@ -66,13 +66,14 @@ def test_embed_task_is_idempotent_and_tolerates_missing_image(object_store):
     assert other.embedding is None
 
 
-def test_sighting_records_phone_user_and_group_placeholder():
+def test_sighting_records_phone_user_and_group(make_partner_group):
     phone = PhoneNumber.objects.create(e164="+237670000001", operator="mtn")
     user = BotUser.objects.create(wa_phone="237670000002")
-    ctx = SightingContext(context="group", phone_number=phone, bot_user=user, group_id=5)
+    group = make_partner_group()
+    ctx = SightingContext(context="group", phone_number=phone, bot_user=user, group=group)
     image = ingest(encode(structured_image(1)), "group", ctx)
     sighting = image.sightings.get()
-    assert (sighting.phone_number, sighting.bot_user, sighting.group_id) == (phone, user, 5)
+    assert (sighting.phone_number, sighting.bot_user, sighting.group) == (phone, user, group)
 
 
 @pytest.mark.parametrize("bad", [b"", b"garbage", encode(PILImage.new("RGB", (8, 8)), "BMP")])

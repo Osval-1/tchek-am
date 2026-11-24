@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "tchekam.identifiers",
     "tchekam.conversations",
     "tchekam.imaging",
+    "tchekam.groups",
     "tchekam.reports",
     "tchekam.reputation",
     "tchekam.checks",

@@ -126,3 +126,47 @@ def parse_wasender_payload(payload: Any) -> InboundMessage | None:
         timestamp=_timestamp(envelope.get("messageTimestamp"), payload.get("timestamp")),
         raw_event=event,
     )
+
+
+# Group payloads are stored without any content (ADR-012): only what routing and the image
+# download need. Whitelists, so a field the provider adds later is dropped, not kept.
+_KEY_FIELDS = ("id", "fromMe", "remoteJid", "participant", "cleanedParticipantPn")
+# What decrypt-media needs to fetch and decrypt the file. No caption, thumbnail or contextInfo.
+_IMAGE_MEDIA_FIELDS = (
+    "url",
+    "directPath",
+    "mimetype",
+    "mediaKey",
+    "mediaKeyTimestamp",
+    "fileSha256",
+    "fileEncSha256",
+    "fileLength",
+)
+
+
+def _scalars(source: dict, fields: tuple[str, ...]) -> dict:
+    return {name: source[name] for name in fields if isinstance(source.get(name), str | int)}
+
+
+def storable_payload(payload: dict, msg: InboundMessage) -> dict:
+    """The payload as it may be persisted. Private messages are kept as received.
+
+    A group message is rebuilt from scratch: the key, the timestamp, and for an image only the
+    media pointers. Message text, captions, quoted messages, vCards, display names and
+    thumbnails are never stored for anyone in a group.
+    """
+    if msg.chat_type != "group":
+        return payload
+    envelope = _envelope(payload)
+    message: dict = {}
+    if msg.kind == "image" and msg.media is not None:
+        descriptor = _dict(_dict(envelope.get("message")).get(msg.media["type"]))
+        message = {msg.media["type"]: _scalars(descriptor, _IMAGE_MEDIA_FIELDS)}
+    stored: dict[str, Any] = {
+        "key": _scalars(_dict(envelope.get("key")), _KEY_FIELDS),
+        "message": message,
+        "redacted": msg.kind,
+    }
+    if msg.timestamp is not None:
+        stored["messageTimestamp"] = msg.timestamp
+    return {"event": msg.raw_event, "data": {"messages": stored}}

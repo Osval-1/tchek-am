@@ -72,3 +72,34 @@ def otp_login():
         return device
 
     return login
+
+
+@pytest.fixture
+def make_partner_group(db):
+    """Create a consented PartnerGroup (status active unless overridden)."""
+    from django.contrib.auth import get_user_model
+    from django.utils import timezone
+
+    from tchekam.groups.models import PartnerGroup
+
+    counter = iter(range(1, 10_000))
+
+    def make(group_jid=None, **kwargs):
+        n = next(counter)
+        recorder = kwargs.pop("consent_recorded_by", None) or get_user_model().objects.create_user(
+            f"group-staff-{n}", is_staff=True
+        )
+        now = timezone.now()
+        defaults = {
+            "name": f"Market {n}",
+            "admin_phone": "+237690000001",
+            "consent_at": now,
+            "notice_confirmed_at": now,
+        }
+        return PartnerGroup.objects.create(
+            group_jid=group_jid or f"12036300000000{n:04d}@g.us",
+            consent_recorded_by=recorder,
+            **{**defaults, **kwargs},
+        )
+
+    return make

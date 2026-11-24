@@ -92,22 +92,28 @@ def _image_blocks(images: list[tuple[bytes, str]]) -> tuple[list[int], list[dict
         if mimetype.startswith(_NON_IMAGE_PREFIXES) and mimetype not in _OPAQUE_LABELS:
             logger.info("extraction: skipping non-image media of type %s", mimetype)
             continue
-        prepared = _prepare(data)
-        if prepared is None:
+        block = image_block(data)
+        if block is None:
             continue
-        data, mimetype = prepared
         slots.append(index)
-        blocks.append(
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": mimetype,
-                    "data": base64.standard_b64encode(data).decode("ascii"),
-                },
-            }
-        )
+        blocks.append(block)
     return slots, blocks
+
+
+def image_block(data: bytes) -> dict | None:
+    """An API image content block for untrusted bytes, or None if they cannot be sent."""
+    prepared = _prepare(data)
+    if prepared is None:
+        return None
+    data, mimetype = prepared
+    return {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": mimetype,
+            "data": base64.standard_b64encode(data).decode("ascii"),
+        },
+    }
 
 
 def _prepare(data: bytes) -> tuple[bytes, str] | None:

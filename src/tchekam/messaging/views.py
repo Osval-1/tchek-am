@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from tchekam.core import tasks
 
 from .models import InboundEvent
-from .parser import parse_wasender_payload
+from .parser import parse_wasender_payload, storable_payload
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,8 @@ def whatsapp_webhook(request: HttpRequest) -> JsonResponse:
     try:
         # Savepoint so a rejected row does not poison an enclosing transaction.
         with transaction.atomic():
-            event, created = InboundEvent.record(msg, payload)
+            # Group payloads lose all text here, before anything touches the database.
+            event, created = InboundEvent.record(msg, storable_payload(payload, msg))
     except DataError as exc:
         # e.g. a NUL character Postgres refuses in jsonb/text. A retry would fail the same
         # way, so acknowledge it rather than make the provider redeliver forever.

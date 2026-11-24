@@ -22,6 +22,6 @@ class ImageAdmin(ReadOnlyAdmin):
 
 @admin.register(ImageSighting)
 class ImageSightingAdmin(ReadOnlyAdmin):
-    # group_id is left out: group identity must not leak through this view.
+    # group is left out: group identity must not leak through this view.
     list_display = ("id", "image", "phone_number", "context", "seen_at")
-    exclude = ("group_id",)
+    exclude = ("group",)

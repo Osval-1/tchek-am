@@ -2,6 +2,7 @@
 
 import hashlib
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from django.db import IntegrityError, transaction
 
@@ -13,15 +14,18 @@ from tchekam.identifiers.models import PhoneNumber
 from . import hashing
 from .models import Image, ImageSighting
 
+if TYPE_CHECKING:  # imaging only stores the reference; it never depends on groups behaviour
+    from tchekam.groups.models import PartnerGroup
+
 
 @dataclass(frozen=True)
 class SightingContext:
-    """Where an image was seen. `group_id` is a placeholder until Issue 20 adds PartnerGroup."""
+    """Where an image was seen."""
 
     context: str
     phone_number: PhoneNumber | None = None
     bot_user: BotUser | None = None
-    group_id: int | None = None
+    group: "PartnerGroup | None" = None
 
 
 def ingest(data: bytes, source: str, sighting_ctx: SightingContext) -> Image:
@@ -68,6 +72,6 @@ def _record(image: Image, ctx: SightingContext) -> None:
         image=image,
         phone_number=ctx.phone_number,
         bot_user=ctx.bot_user,
-        group_id=ctx.group_id,
+        group=ctx.group,
         context=ctx.context,
     )

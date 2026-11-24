@@ -48,6 +48,7 @@ COLLECT = "report_collect"
 RESUME = "report_resume_choice"
 DETAILS = "report_await_details"
 CONFIRM = "report_confirm"  # handled in confirm.py
+NEEDS_INFO = "report_needs_info"  # handled in needs_info.py
 EXTRACTING = "extracting"  # step of COLLECT while reports.extract runs
 
 REPORT_TTL = timedelta(hours=24)  # from the last activity; after that, resume is offered
@@ -134,6 +135,12 @@ def _carried_media(ctx: Context) -> dict[str, str] | None:
 
 
 def _start_report(ctx: Context) -> list[Reply]:
+    from . import needs_info  # needs_info builds on this module, so it is imported late
+
+    # A report the moderator sent back comes first, and is not a new report: no daily limit.
+    resumed = needs_info.resume(ctx, _carried_media(ctx))
+    if resumed is not None:
+        return resumed
     if daily_limit_reached(ctx.user):  # refuse early, before the user gathers evidence
         return say(ctx, "report.limit_reached", n=settings.REPORTS_PER_DAY)
     carry = _carried_media(ctx)
@@ -157,7 +164,7 @@ def _new_report(ctx: Context, carry: dict[str, str] | None) -> list[Reply]:
     _enter_collect(ctx.conversation, report.pk)
     replies = say(ctx, "report.instructions")
     if carry:
-        replies += _accept_media(ctx, report, carry["message_id"], carry["kind"])
+        replies += accept_media(ctx, report, carry["message_id"], carry["kind"])
     return replies
 
 
@@ -173,7 +180,7 @@ def _resume_choice(ctx: Context) -> list[Reply]:
         touch(ctx, draft)
         replies = say(ctx, "report.resumed", items=item_counts_text(draft.pk, ctx.lang))
         if carry:
-            replies += _accept_media(ctx, draft, carry["message_id"], carry["kind"])
+            replies += accept_media(ctx, draft, carry["message_id"], carry["kind"])
         return replies
     if choice == "2":
         draft.transition(Report.Status.WITHDRAWN, reason="replaced by a new report")
@@ -192,7 +199,7 @@ def _ingest_after(ctx: Context, report: Report, message_id: str, kind: str) -> N
     ctx.enqueue_after("reports.ingest_media", report_id=report.pk, message_id=message_id, kind=kind)
 
 
-def _accept_media(ctx: Context, report: Report, message_id: str, kind: str) -> list[Reply]:
+def accept_media(ctx: Context, report: Report, message_id: str, kind: str) -> list[Reply]:
     """Count the item against the limit now; download and store it in a task after commit."""
     pending = _pending(ctx.conversation)
     if message_id in pending:
@@ -204,7 +211,7 @@ def _accept_media(ctx: Context, report: Report, message_id: str, kind: str) -> l
     return []
 
 
-def _recover_pending(ctx: Context, report: Report) -> tuple[bool, int]:
+def recover_pending(ctx: Context, report: Report) -> tuple[bool, int]:
     """On DONE: (still waiting, files given up on).
 
     A file whose job has not reported back within PENDING_STALE is re-queued once (ingestion is
@@ -245,7 +252,7 @@ def _start_extraction(ctx: Context, report: Report) -> None:
 
 
 def _finish(ctx: Context, report: Report) -> list[Reply]:
-    waiting, dropped = _recover_pending(ctx, report)
+    waiting, dropped = recover_pending(ctx, report)
     if dropped:
         # Stay collecting so the files can be resent; the next DONE proceeds as usual.
         key = "report.files_lost_one" if dropped == 1 else "report.files_lost"
@@ -279,12 +286,16 @@ def _collect(ctx: Context) -> list[Reply]:
     touch(ctx, report)
     if command in FINISH_WORDS:
         return _finish(ctx, report)
+    return add_content(ctx, report)
 
+
+def add_content(ctx: Context, report: Report) -> list[Reply]:
+    """Take one message as evidence (image, voice note) or story text for `report`."""
     msg = ctx.msg
     if msg.kind in MEDIA_KINDS:
         if msg.text:  # an image caption is part of the story
             _append_story(report, msg.text)
-        return _accept_media(ctx, report, msg.message_id, msg.kind)
+        return accept_media(ctx, report, msg.message_id, msg.kind)
     if msg.kind in ("text", "contact") and (msg.text or "").strip():
         # Anything typed here is story, including a number: it is not a number check.
         if not _append_story(report, msg.text or ""):
@@ -439,3 +450,7 @@ def register() -> None:
     from . import confirm
 
     confirm.register()
+    from . import needs_info, notify
+
+    needs_info.register()
+    notify.register()

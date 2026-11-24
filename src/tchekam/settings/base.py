@@ -114,6 +114,10 @@ WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET", default="")
 
 # Linked from the main menu as the privacy policy and terms of use.
 TERMS_URL = env("TERMS_URL", default="https://tchek-am.example/terms")
+# Appended to the reporter's next-steps message when non-empty.
+HELP_URL = env("HELP_URL", default="https://tchek-am.example/help")
+# Bot messages outside a reply are only sent this long after the user's last message (ADR-011).
+REPLY_WINDOW_HOURS = env.int("REPLY_WINDOW_HOURS", default=24)
 
 LOGGING = {
     "version": 1,

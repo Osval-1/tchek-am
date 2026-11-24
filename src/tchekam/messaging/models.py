@@ -10,6 +10,7 @@ class InboundEvent(models.Model):
 
     class Status(models.TextChoices):
         RECEIVED = "received"
+        PROCESSING = "processing"
         PROCESSED = "processed"
         FAILED = "failed"
         IGNORED = "ignored"
@@ -19,6 +20,10 @@ class InboundEvent(models.Model):
     payload = models.JSONField()
     received_at = models.DateTimeField(auto_now_add=True)
     processed_at = models.DateTimeField(null=True, blank=True)
+    # Set when a worker claims the event; the recovery job resets stale claims.
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    # Claims so far (rate-limit requeues excluded): caps crash loops and error retries.
+    attempts = models.PositiveSmallIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECEIVED)
     error = models.TextField(blank=True)
 
@@ -35,3 +40,54 @@ class InboundEvent(models.Model):
         return cls.objects.get_or_create(
             message_id=msg.message_id, defaults={"event": msg.raw_event, "payload": payload}
         )
+
+
+class ChannelState(models.Model):
+    """Which WaSender session is live. One row (pk=1), written by `switch_channel`."""
+
+    class Session(models.TextChoices):
+        PRIMARY = "primary"
+        BACKUP = "backup"
+
+    active_session = models.CharField(
+        max_length=10, choices=Session.choices, default=Session.PRIMARY
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"active session: {self.active_session}"
+
+    @classmethod
+    def current(cls) -> str:
+        """The switched value if an operator ever switched, else the setting."""
+        from django.conf import settings
+
+        row = cls.objects.filter(pk=1).first()
+        return row.active_session if row else settings.WASENDER_ACTIVE_SESSION
+
+    @classmethod
+    def switch(cls, session: str) -> None:
+        cls.objects.update_or_create(pk=1, defaults={"active_session": session})
+
+
+class SendBucket(models.Model):
+    """The global token bucket (one row, pk=1). Only touched under the limiter's advisory lock."""
+
+    tokens = models.FloatField()
+    updated_at = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return f"{self.tokens:.1f} tokens"
+
+
+class RecipientSend(models.Model):
+    """Sliding log of recent sends per recipient; the recipient is stored as a keyed hash."""
+
+    recipient_hash = models.CharField(max_length=64)
+    sent_at = models.DateTimeField()
+
+    class Meta:
+        indexes = [models.Index(fields=["recipient_hash", "sent_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.recipient_hash[:8]} at {self.sent_at}"

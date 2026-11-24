@@ -407,6 +407,28 @@ Date: 2026-11-24 · Status: **Accepted**
 
 ---
 
+## ADR-021: Channel safeguards
+Date: 2026-11-24 · Status: **Accepted**
+
+**Question:** How does the bot stay under WhatsApp's and WaSender's limits, avoid unsolicited messages, survive a ban, and process each inbound message once? (This came up while building ISSUES.md Issue 23.)
+
+**Decision:**
+- **Decorator:** `get_channel()` returns `SafeChannel(channel)` when `CHANNEL_SAFEGUARDS` is true (default true; false in test settings so existing tests see the bare channel). Order inside a send: group refusal (`GroupSendForbidden`, unchanged), reply-only window, rate limits, typing, send.
+- **Deferral seam:** our limiter raises `Deferred`, a subclass of `RateLimited`, so callers treat the provider's limit and ours the same way. `messaging.outbox.deliver` catches it and re-enqueues only the unsent replies as `messaging.deliver_replies` (queue `whatsapp`, delay at least `retry_after`). Re-running `process_inbound` would route the message twice, because routing has already committed. Transient `ChannelError`s retry up to 3 times with backoff; rate-limit deferrals are capped at 20. `send_to_user` queues its message as a `deliver_replies` job on the `whatsapp` queue (so background jobs obey the same lock cap, and results are delayed, not dropped); its return value only means "queued", and a send outside the reply window is dropped by the job. Reply-window notifications pass `defer=False` and keep the `PendingNotification` fallback.
+- **Limiter:** one `pg_advisory_xact_lock` serialises every check, so it holds across workers. A global token bucket (`SEND_RATE_PER_MINUTE`, default 20) and a per-recipient sliding log (6 sends per 30 s; a log, so the 7th is always refused). Recipients are stored as keyed HMAC-SHA256 hashes; rows older than the window are pruned on every call. A refused send charges nothing.
+- **Typing:** `send_typing(jid, min(4000, 40 ms x len(text)))`, then a sleep of the same length, inside the worker task. A typing failure other than a rate limit is swallowed.
+- **Reply-only:** a send is allowed if `BotUser.last_inbound_at` is within `REPLY_WINDOW_HOURS`, else `UnsolicitedMessageBlocked` (a `ChannelError`). The `allow_unsolicited(to)` context manager is the escape hatch for delivering a queued `PendingNotification`; it is unused today because queued notifications are delivered inside a reply to an inbound message.
+- **Failover:** `ChannelState` (one row) holds the active session, overriding the `WASENDER_ACTIVE_SESSION` default. The database is read on each `get_channel()` only when `WASENDER_BACKUP_API_KEY` is set. The WaSender channel cache is keyed by API key, so a switch applies on the next call. `switch_channel primary|backup` refuses a session without a key and writes an `AuditLog` row. The webhook accepts either session's secret. Prod settings refuse a backup session without its key.
+- **Concurrency:** queue `whatsapp`, with lock `whatsapp-{sha256(recipient) % 3}` (Python's `hash()` differs per process): at most 3 sends at once. The webhook enqueues `process_inbound` on it with the sender's lock. Jobs with a lock are deferred with `lock_mode="mutex"`: Procrastinate's default `ordered` mode lets a waiting job scheduled for the future hold the lock, so one 30 s deferral would stall every job sharing its lock, a third of all users. The trade-off: ordering per recipient is no longer guaranteed, and a deferred tail can arrive after a newer reply.
+- **Retry-safe processing:** `InboundEvent` gets `PROCESSING`, `claimed_at` and `attempts`. A worker claims with `filter(pk, status=RECEIVED).update(...)` (also adding 1 to `attempts`) and continues only if one row changed. `RateLimited` before routing committed requeues the event after the delay (cap 20, refunding the attempt). Other errors before the commit reset the event to `RECEIVED` and retry with backoff until `attempts` reaches 3, then `FAILED`. Any exception after the routing commit (delivery, limiter or database error, a delivered callback, enqueueing a job) is tagged `after_commit` by `handle_private_message`: the event ends `FAILED` with no re-run, since a re-run would route twice, and queued notifications stay pending. The periodic `messaging.recover_stuck_events` resets claims older than 10 minutes and re-enqueues them, or marks the event `FAILED` once it has been claimed 3 times.
+- **Prod:** settings refuse to start with `CHANNEL_SAFEGUARDS` false.
+
+**Accepted risks:** processing is at-least-once: a crash after a send and before `processed` can resend a reply (also after recovery). A rate-limit deferral counts as delivered for queued notifications, so one whose later retries all fail is lost. A send made inside a database transaction (`reports.notify`) holds the limiter's advisory lock until that transaction ends, briefly pausing other sends.
+
+**Consequences:** A worker must listen to the `whatsapp` queue (see `docs/runbook.md`). The limits are per deployment, not per WhatsApp number: a switch to the backup does not reset the counters.
+
+---
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

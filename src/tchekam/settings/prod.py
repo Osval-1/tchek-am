@@ -1,3 +1,5 @@
+from django.core.exceptions import ImproperlyConfigured
+
 from .base import *  # noqa: F403
 from .base import env
 
@@ -12,6 +14,14 @@ S3_ACCESS_KEY = env("S3_ACCESS_KEY")
 S3_SECRET_KEY = env("S3_SECRET_KEY")
 WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET")
 WASENDER_API_KEY = env("WASENDER_API_KEY")
+# Rate limits, typing delays and the reply-only rule protect the number from a ban.
+if not CHANNEL_SAFEGUARDS:  # noqa: F405
+    raise ImproperlyConfigured("CHANNEL_SAFEGUARDS must be true in production")
+# A failover to a number without a key would silently break every send.
+if WASENDER_ACTIVE_SESSION not in ("primary", "backup"):  # noqa: F405
+    raise ImproperlyConfigured("WASENDER_ACTIVE_SESSION must be primary or backup")
+if WASENDER_ACTIVE_SESSION == "backup" and not WASENDER_BACKUP_API_KEY:  # noqa: F405
+    raise ImproperlyConfigured("WASENDER_ACTIVE_SESSION=backup needs WASENDER_BACKUP_API_KEY")
 # Linked from the menu; a placeholder URL in prod would send users to a dead page.
 TERMS_URL = env("TERMS_URL")
 # Empty omits the "More help" line; the placeholder default would point users at a dead page.

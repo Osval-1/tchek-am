@@ -112,6 +112,15 @@ WASENDER_API_KEY = env("WASENDER_API_KEY", default="")
 WASENDER_BASE_URL = env("WASENDER_BASE_URL", default="https://www.wasenderapi.com/api")
 # Empty means the webhook rejects every request (fail closed).
 WASENDER_WEBHOOK_SECRET = env("WASENDER_WEBHOOK_SECRET", default="")
+# Failover (ISSUES.md Issue 23): a second WhatsApp number. `switch_channel` overrides the
+# active session in the database; this setting is the default before any switch.
+WASENDER_ACTIVE_SESSION = env("WASENDER_ACTIVE_SESSION", default="primary")  # primary | backup
+WASENDER_BACKUP_API_KEY = env("WASENDER_BACKUP_API_KEY", default="")
+WASENDER_BACKUP_WEBHOOK_SECRET = env("WASENDER_BACKUP_WEBHOOK_SECRET", default="")
+# Wrap the channel in SafeChannel (rate limits, typing, reply-only). Tests turn it off.
+CHANNEL_SAFEGUARDS = env.bool("CHANNEL_SAFEGUARDS", default=True)
+# Global outbound budget across all workers; the per-recipient limit is fixed in messaging.limiter.
+SEND_RATE_PER_MINUTE = env.int("SEND_RATE_PER_MINUTE", default=20)
 
 # Linked from the main menu as the privacy policy and terms of use.
 TERMS_URL = env("TERMS_URL", default="https://tchek-am.example/terms")

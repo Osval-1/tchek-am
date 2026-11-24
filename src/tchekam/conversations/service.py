@@ -65,11 +65,16 @@ def handle_private_message(
                 conversation.save()  # a hook may have started a flow after route() saved
                 replies = early + replies
     try:
-        if deliver is not None:
-            deliver(replies)
-        for callback in delivered_callbacks:  # not reached when deliver raised
-            callback()
-    finally:
-        for name, kwargs in ctx.jobs:
-            enqueue(name, **kwargs)
+        try:
+            if deliver is not None:
+                deliver(replies)
+            for callback in delivered_callbacks:  # not reached when deliver raised
+                callback()
+        finally:
+            for name, kwargs in ctx.jobs:
+                enqueue(name, **kwargs)
+    except Exception as exc:
+        # Routing is committed: the caller must not run this message again (it would route twice).
+        exc.after_commit = True  # type: ignore[attr-defined]
+        raise
     return replies

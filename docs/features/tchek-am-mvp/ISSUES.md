@@ -715,6 +715,16 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 **Files likely affected**: `src/tchekam/messaging/{safe.py,channel.py,tasks.py,management/commands/switch_channel.py}`, `docs/runbook.md`, `tests/messaging/test_safe.py`
 **Dependencies**: 3, 15
 
+**Implementation note (as built):** see ADR-021 for the full design. In short:
+- `get_channel()` wraps the channel in `SafeChannel` (`messaging/safe.py`) when `CHANNEL_SAFEGUARDS` is true (false in test settings; prod refuses false). Order inside a send: group refusal, reply window, limiter, typing, send.
+- Limits live in Postgres (`messaging/limiter.py`, serialised on an advisory lock). Hitting one raises `Deferred(RateLimited)`.
+- `messaging/outbox.py` re-enqueues only the unsent replies as `messaging.deliver_replies` (queue `whatsapp`, delay at least `retry_after`), never the whole inbound event. `send_to_user` queues its message there too; `reports.notify` passes `defer=False`, sends inline and keeps its PendingNotification fallback.
+- `allow_unsolicited(to)` exists but is unused: queued notifications are delivered inside a reply, so the window is always open then.
+- Failover: `ChannelState` row, `switch_channel primary|backup`, `WASENDER_BACKUP_API_KEY`, `WASENDER_BACKUP_WEBHOOK_SECRET`. Prod settings reject a backup session without its key.
+- `process_inbound` claims events atomically (`PROCESSING`, `claimed_at`, `attempts`); `messaging.recover_stuck_events` (every 5 minutes) resets claims older than 10 minutes. Processing is at-least-once; an event claimed 3 times ends `FAILED`.
+- Deviation: the webhook enqueues `process_inbound` on queue `whatsapp` with a per-sender lock, so the "3 concurrent sends" cap covers replies.
+- Follow-up: a queued notification currently counts a rate-limit deferral as delivered; keeping it pending until the deferred send succeeds needs the outbox job to mark the `PendingNotification` itself.
+
 ---
 
 ## Issue 24: Retention job and legal hold

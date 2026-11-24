@@ -40,6 +40,29 @@ def test_enqueue_defers_to_procrastinate_when_not_eager(settings):
     assert CALLS == []
 
 
+@pytest.mark.django_db
+def test_enqueue_passes_the_lock_to_procrastinate(settings):
+    settings.TASKS_EAGER = False
+
+    tasks.enqueue("tests.record", value=3, queue="whatsapp", lock="whatsapp-1")
+
+    job = ProcrastinateJob.objects.get(task_name="tests.record", args={"value": 3})
+    assert job.lock == "whatsapp-1"
+    assert job.lock_mode == "mutex"
+
+
+def test_cron_registers_a_periodic_task():
+    from procrastinate.contrib.django import app
+
+    @tasks.register("tests.periodic", cron="0 * * * *")
+    def periodic(timestamp):
+        pass
+
+    assert any(
+        p.task.name == "tests.periodic" for p in app.periodic_registry.periodic_tasks.values()
+    )
+
+
 def test_eager_rejects_non_json_args():
     with pytest.raises(TypeError):
         tasks.enqueue("tests.record", value=object())

@@ -63,3 +63,56 @@ jobs:
         run: >-
           uv run pytest tests/reputation --cov=tchekam.reputation --cov-branch
           --cov-report=term-missing --cov-fail-under=100
+
+  # Builds the production image and checks that the container really serves /healthz.
+  image:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: tchekam
+          POSTGRES_PASSWORD: tchekam
+          POSTGRES_DB: tchekam
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tchekam -d tchekam"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t tchekam .
+      - name: Serve /healthz from the container
+        run: |
+          # Dummy values: prod settings refuse to start without them. Host networking lets the
+          # container reach the Postgres service on localhost.
+          cat > container.env <<'EOF'
+          DATABASE_URL=postgres://tchekam:tchekam@localhost:5432/tchekam
+          SECRET_KEY=ci-only-secret-key-ci-only-secret-key-ci-only-secret-key
+          ALLOWED_HOSTS=localhost
+          S3_ENDPOINT_URL=http://localhost:8333
+          S3_BUCKET=x
+          S3_ACCESS_KEY=x
+          S3_SECRET_KEY=x
+          WASENDER_API_KEY=x
+          WASENDER_WEBHOOK_SECRET=x
+          TERMS_URL=http://localhost/terms
+          REPORTER_KEY_SECRET=ci-only-reporter-key
+          ANTHROPIC_API_KEY=x
+          GROQ_API_KEY=x
+          SERPAPI_API_KEY=x
+          EMBEDDER_BACKEND=fake
+          EOF
+          docker run --rm --network host --env-file container.env tchekam python src/manage.py migrate --noinput
+          docker run -d --name web --network host --env-file container.env tchekam
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/healthz | grep -q '"ok"'; then ready=1; break; fi
+            sleep 2
+          done
+          [ "$ready" = 1 ] || { echo "/healthz never answered"; docker logs web; exit 1; }
+          # The same image must also start the worker.
+          docker run --rm --network host --env-file container.env tchekam \
+            sh -c 'timeout 10 python src/manage.py procrastinate worker -q default,whatsapp --concurrency 8; [ $? -eq 124 ]'

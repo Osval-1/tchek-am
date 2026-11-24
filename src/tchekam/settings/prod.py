@@ -1,4 +1,8 @@
+import importlib.util
+
 from django.core.exceptions import ImproperlyConfigured
+
+from tchekam.core.observability import init_sentry
 
 from .base import *  # noqa: F403
 from .base import env
@@ -32,8 +36,41 @@ REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 # Voice notes need Whisper; an empty key would turn every transcription into a silent failure.
 GROQ_API_KEY = env("GROQ_API_KEY")
+# The default image has no torch; fail at startup, not at the first photo check after a deploy.
+if EMBEDDER_BACKEND == "openclip" and importlib.util.find_spec("open_clip") is None:  # noqa: F405
+    raise ImproperlyConfigured(
+        "EMBEDDER_BACKEND=openclip needs the image built with WITH_ML=1 "
+        "(or set EMBEDDER_BACKEND explicitly)"
+    )
 # Web image search; an empty key would make every search fail without a trace.
 SERPAPI_API_KEY = env("SERPAPI_API_KEY")
+
+# Admin assets are served by the app itself (no CDN or nginx in front); right after
+# SecurityMiddleware, as WhiteNoise requires. Prod only: dev and tests keep Django's defaults.
+# Only prod collects static files (admin assets); base has no staticfiles app, hence no
+# `collectstatic` command until this line.
+INSTALLED_APPS = [*INSTALLED_APPS, "django.contrib.staticfiles"]  # noqa: F405
+STATIC_ROOT = BASE_DIR / "staticfiles"  # noqa: F405
+MIDDLEWARE = [  # noqa: F405
+    MIDDLEWARE[0],  # noqa: F405
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    *MIDDLEWARE[1:],  # noqa: F405
+]
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
+
+# Errors only: no default PII, request bodies or locals, and events are masked by
+# `scrub_event`. Unset DSN means Sentry stays off (e.g. staging without an account).
+SENTRY_DSN = env("SENTRY_DSN", default="")
+init_sentry(
+    dsn=SENTRY_DSN,
+    environment=env("SENTRY_ENVIRONMENT", default="production"),
+    # Render exposes the deployed commit at runtime.
+    release=env("SENTRY_RELEASE", default=env("RENDER_GIT_COMMIT", default="")),
+    traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.0),
+)
 
 # Render terminates TLS at its proxy, so trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

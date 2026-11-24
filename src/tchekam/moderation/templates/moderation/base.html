@@ -32,7 +32,7 @@
 </style>
 </head>
 <body>
-<header><a href="{% url 'moderation:queue' %}">Review queue</a> <a href="{% url 'admin:index' %}">Admin</a></header>
+<header><a href="{% url 'moderation:queue' %}">Review queue</a> <a href="{% url 'moderation:appeal_queue' %}">Appeals</a> <a href="{% url 'admin:index' %}">Admin</a></header>
 <main>
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 {% block content %}{% endblock %}

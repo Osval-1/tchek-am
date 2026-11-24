@@ -27,11 +27,12 @@ _seq = count(1)
 
 @pytest.fixture(autouse=True)
 def _isolate():
+    previous = appeals_hook._provider  # restored, so the real provider survives for other tests
     cache.clear()
     appeals_hook.set_provider(None)
     yield
     cache.clear()
-    appeals_hook.set_provider(None)
+    appeals_hook.set_provider(previous)
 
 
 def user(trust: float = 1.0) -> BotUser:

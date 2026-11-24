@@ -65,3 +65,4 @@ select = ["E", "F", "I", "B", "UP", "DJ"]
 # Copy lines carry a trailing "needs native review" marker, so they can exceed the limit.
 "src/tchekam/i18n/catalog.py" = ["E501"]
 "src/tchekam/i18n/catalog_message.py" = ["E501"]
+"src/tchekam/i18n/catalog_appeals.py" = ["E501"]

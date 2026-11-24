@@ -618,6 +618,24 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 **Files likely affected**: `src/tchekam/groups/*`, `src/tchekam/messaging/{views,channel}.py`, `src/tchekam/ai/prompts/is_product_photo/v1.md`, `tests/groups/*`
 **Dependencies**: 17, 9
 
+**Implementation note (as built):** see ADR-019 for the full design. In short:
+- `tchekam.groups` plugs into messaging through `messaging.hooks.register_group_handler`. Nothing in messaging depends on groups, and a boundary test enforces this. Image download, classification and ingest run in the queued job `groups.ingest_image`.
+- `messaging.parser.storable_payload` rebuilds group payloads from allow-lists before they are saved: key fields, timestamp, kind marker and, for images, only the decrypt-media pointers. No text, caption, vCard, display name or thumbnail is stored.
+- Leave-once means one leave per jid, ever: the `UnconsentedGroupLeave` claim is inserted in the same transaction as the leave call and rolls back if the call fails. This departs from ADR-012's "leaves any group it is added to without consent" (follow-up b).
+- STOP GROUP and the group ingest serialise on a per-poster `pg_advisory_xact_lock`. Lock order: Conversation row, then the advisory lock, then Image rows `FOR UPDATE` in pk order. A sighting committed after an erasure fails the deferred foreign-key check, and `intake._store` retries once.
+- `ImageSighting.group` is a PROTECT foreign key on the existing `group_id` column. Groups are deleted only through the audited admin action "Delete group and all its sightings".
+- `GroupSendForbidden` is deliberately not a `ChannelError`, so it cannot be swallowed.
+- Router policy `DATA_PROTECTION_COMMANDS` (`group_opt_out`) runs before onboarding and also for blocked users. Blocked users get nothing for any other message.
+- LID-only and non-Cameroonian posters are discarded before download. This is a scope cut against PRD F8 ("every product photo"), recorded here.
+- `is_product_photo` verdicts are cached for 30 days per sha256 in the shared cache.
+- Photos of group members, who mostly never used the bot, are sent to Anthropic for classification. The privacy notice and the legal review must name this.
+
+**Follow-ups (tracked):**
+- (b) A bot re-added to a group after its first leave stays in silently. Handle the WaSender group-join and participant events, or periodically leave jids that have no PartnerGroup, so the ADR-012 promise holds.
+- (c) Redacted `InboundEvent` rows for unconsented groups, opted-out posters and non-product images still hold participant numbers and the media url and mediaKey for 30 days. Scrub the message and participant fields once the job decides not to ingest.
+- (d) A private photo-check ingest that races an opt-out can fail with the deferred foreign-key IntegrityError (only the group `_store` retries). `delete_with_sightings` can leave a newly committed Image orphaned, or raise ProtectedError in the admin.
+- (e) There is no eval set for `is_product_photo`. It needs one before the pilot, because false positives keep photos of people who did not consent.
+
 ---
 
 ## Issue 21: Message check (F3)

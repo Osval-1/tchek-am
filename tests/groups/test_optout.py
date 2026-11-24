@@ -170,3 +170,26 @@ def test_opt_out_waits_for_an_in_flight_ingest_and_deletes_its_sighting(
     assert (erased.sightings, erased.images) == (1, 1)
     assert not ImageSighting.objects.exists()
     assert not Image.objects.exists()
+
+
+@pytest.mark.django_db
+def test_blocked_user_can_still_opt_out(make_partner_group, object_store):
+    BotUser.objects.create(wa_phone=POSTER, language="en", blocked=True)
+    group_sighting(1, POSTER, make_partner_group(GROUP_JID))
+
+    reply = say("STOP GROUP")
+
+    assert reply == t("groups.opt_out.done", "en")
+    assert not ImageSighting.objects.exists()
+    assert not Image.objects.exists()
+    assert GroupOptOut.objects.filter(wa_phone=POSTER).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("text", ["menu", "LANG", "STOP TRAINING", "4", "677123456", "hello"])
+def test_blocked_user_gets_nothing_for_anything_else(fake_channel, text):
+    user = BotUser.objects.create(wa_phone=POSTER, language="en", blocked=True)
+
+    assert say(text) == ""
+    assert user.conversation.flow == "idle"
+    assert not GroupOptOut.objects.exists()

@@ -41,9 +41,11 @@ GLOBAL_COMMANDS = {
     "stop groupe": "group_opt_out",
     "stop training": "training_opt_out",
 }
-# Data-protection requests honoured even before onboarding: a group member who never used the
-# bot must be able to opt out with their first message. Their handler answers without a language.
-PRE_ONBOARDING_COMMANDS = {"group_opt_out"}
+# Data-protection requests are honoured even before onboarding and even for blocked users: a
+# group member who never used the bot must be able to opt out with their first message, and
+# blocking someone must never keep their group photos collected. The handler answers without
+# needing a language.
+DATA_PROTECTION_COMMANDS = {"group_opt_out"}
 # Menu digit -> prompt flow that waits for the input, then dispatches the intent.
 MENU_PROMPTS = {
     "1": ("await_number", "prompt.send_number"),
@@ -242,8 +244,8 @@ def _route_idle(ctx: Context) -> list[Reply]:
 
 def _route(ctx: Context) -> list[Reply]:
     conv = ctx.conversation
-    command = GLOBAL_COMMANDS.get(normalize(ctx.msg.text)) if ctx.msg.kind == "text" else None
-    if ctx.user.language is None and command not in PRE_ONBOARDING_COMMANDS:
+    command = _command(ctx.msg)
+    if ctx.user.language is None and command not in DATA_PROTECTION_COMMANDS:
         # Onboarding comes before everything else: no language, no copy.
         return _language_pick(ctx) if conv.flow == "language_pick" else _start_language_picker(ctx)
 
@@ -264,11 +266,23 @@ def _route(ctx: Context) -> list[Reply]:
     return _route_idle(ctx)
 
 
+def _command(msg: InboundMessage) -> str | None:
+    return GLOBAL_COMMANDS.get(normalize(msg.text)) if msg.kind == "text" else None
+
+
 def route(ctx: Context) -> list[Reply]:
-    """Route one message; persists the conversation. Blocked users get no reply."""
+    """Route one message; persists the conversation.
+
+    Blocked users get no reply, except for data-protection commands: their STOP GROUP is still
+    honoured (and confirmed), so blocking never keeps someone's group photos collected.
+    """
     if ctx.user.blocked:
-        return []
-    replies = _route(ctx)
+        command = _command(ctx.msg)
+        if command not in DATA_PROTECTION_COMMANDS:
+            return []
+        replies = dispatch(ctx, command)
+    else:
+        replies = _route(ctx)
     ctx.conversation.save()
     return replies
 

@@ -17,6 +17,14 @@ dependencies = [
     "pillow>=13.0.0",
     "django-otp>=1.7.5",
     "qrcode>=8.2",
+    "imagehash>=4.3.2",
+]
+
+[project.optional-dependencies]
+# Heavy CPU-only ML stack for the real image embedder. CI skips it; tests use FakeEmbedder.
+ml = [
+    "torch>=2.4",
+    "open_clip_torch>=2.26",
 ]
 
 [dependency-groups]
@@ -35,6 +43,9 @@ package = false
 DJANGO_SETTINGS_MODULE = "tchekam.settings.test"
 pythonpath = ["src"]
 testpaths = ["tests"]
+# Slow benchmarks are opt-in: run them with `pytest -m slow`. Tests marked `ml` also skip
+# themselves when the `ml` extra is not installed.
+addopts = "-m 'not slow'"
 markers = [
     "integration: tests that touch external services or the full stack",
     "ml: tests that load ML models",

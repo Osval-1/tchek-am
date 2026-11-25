@@ -63,6 +63,7 @@ class AgentRun(AgentRecord):
     model_calls = models.PositiveSmallIntegerField(default=0)
     tool_calls = models.PositiveSmallIntegerField(default=0)
     vision_calls = models.PositiveSmallIntegerField(default=0)
+    stt_calls = models.PositiveSmallIntegerField(default=0)
     lease_until = models.DateTimeField(null=True)
     outcome = models.CharField(max_length=40, blank=True)
     legal_hold = models.BooleanField(default=False)

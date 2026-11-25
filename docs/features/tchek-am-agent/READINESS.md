@@ -1,12 +1,20 @@
-# Agent readiness — 24 November 2026
+# Agent readiness — 25 November 2026
 
-The text/image conversational implementation can run locally. Model selection, UI
+The text/image/audio conversational implementation can run locally. Model selection, UI
 scope, account ZDR and the initial synthetic-test budget are resolved. There is no
 remaining owner decision blocking another local synthetic run within that budget.
 Production traffic has not been enabled or deployed. The original A0–A9 plan includes
 more release evidence and optional capabilities than this implemented scope.
 
 ## Finished code corrections
+
+- ADR-026 consolidates every AI flow on OpenRouter, removes direct Anthropic/Groq
+  adapters and keys, and retains SerpAPI. Report extraction, group classification
+  and message flags use the same DeepSeek model. OpenRouter Whisper Large V3 handles
+  report and agent transcription. Agent voice has audio-container duration/byte bounds,
+  persistent STT/model limits, shared reservations, content-free audit and recovery
+  fencing. STT enforces documented ZDR/data-policy routing; endpoint allow-lists are
+  unsupported there. Contract tests pass; real STT accuracy is not yet measured.
 
 - Explicit requests to check pasted/forwarded text use the authorized `check_message`
   tool directly. A colon, quotation mark or newline separates the request from its
@@ -45,7 +53,6 @@ scoped resources, kill switches, quotas and result provenance are runtime contro
 
 | Capability | Reason / consequence |
 |---|---|
-| Agent voice transcription | The evaluated STT endpoint cannot enforce the required endpoint allow-list. Users get reviewed text guidance; text/image use does not depend on voice. |
 | Production Langfuse tracing | Only local synthetic metadata traces are implemented. Selective external trace deletion/hold/TTL work and hosting are needed before enabling real-user tracing. Local database audit/retention already operate without it. |
 | External reverse-image uploads | Agent lookup is internal and transient. No external-upload authorization or SerpAPI call is inferred from receiving a photo. |
 | Automatic report evidence adoption | Handoffs enter the existing consent/collection flow. The agent does not copy extracted fields into evidence or submit a report. |

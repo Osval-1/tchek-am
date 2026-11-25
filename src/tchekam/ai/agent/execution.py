@@ -101,6 +101,8 @@ def claim(run_id: int) -> RunContext | None:
             sequence=run.sequence,
             model_calls=run.model_calls,
             tool_calls=run.tool_calls,
+            vision_calls=run.vision_calls,
+            stt_calls=run.stt_calls,
         )
         context.deadline = monotonic() + settings.AGENT_DEADLINE_SECONDS
         return context

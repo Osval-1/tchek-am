@@ -47,7 +47,6 @@ class FakeLLMClient:
         effort: str,
         max_tokens: int,
         prompt_version: str,
-        use_fallback: bool,
     ) -> LLMResult:
         self.calls.append(
             {
@@ -59,7 +58,6 @@ class FakeLLMClient:
                 "effort": effort,
                 "max_tokens": max_tokens,
                 "prompt_version": prompt_version,
-                "use_fallback": use_fallback,
             }
         )
         queue = self.responses.get(purpose) or []

@@ -8,15 +8,15 @@ from tchekam.identifiers.phone import normalize_cm_number
 
 
 def test_runner_skips_cleanly_without_a_key(settings, capsys):
-    settings.ANTHROPIC_API_KEY = ""
-    settings.AI_BACKEND = "anthropic"
+    settings.OPENROUTER_API_KEY = ""
+    settings.AI_BACKEND = "openrouter"
 
     assert run.main(["extraction"]) == 0
     assert "skip" in capsys.readouterr().out.lower()
 
 
 def test_runner_skips_on_the_fake_backend(settings, capsys):
-    settings.ANTHROPIC_API_KEY = "sk-something"
+    settings.OPENROUTER_API_KEY = "sk-something"
     settings.AI_BACKEND = "fake"
 
     assert run.main(["extraction"]) == 0

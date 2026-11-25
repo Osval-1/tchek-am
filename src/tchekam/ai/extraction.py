@@ -65,14 +65,13 @@ def extract_evidence(
     for _attempt in range(2):  # one retry, and only for output that failed validation
         result = client.structured(
             purpose=PURPOSE,
-            model=settings.AI_MODEL_VISION,
+            model=settings.OPENROUTER_MODEL,
             system=system,
             user_content=blocks,
             schema_model=Extraction,
             effort=EFFORT,
             max_tokens=MAX_TOKENS,
             prompt_version=version,
-            use_fallback=settings.AI_REFUSAL_FALLBACK,
         )
         if result.ok:
             return _clean(result.data, sent_slots, len(images))
@@ -107,11 +106,9 @@ def image_block(data: bytes) -> dict | None:
         return None
     data, mimetype = prepared
     return {
-        "type": "image",
-        "source": {
-            "type": "base64",
-            "media_type": mimetype,
-            "data": base64.standard_b64encode(data).decode("ascii"),
+        "type": "image_url",
+        "image_url": {
+            "url": f"data:{mimetype};base64," + base64.standard_b64encode(data).decode("ascii"),
         },
     }
 

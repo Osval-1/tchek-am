@@ -1,4 +1,4 @@
-"""The LLM boundary: everything outside this app talks to Claude through here."""
+"""The structured LLM boundary for report extraction and classifiers."""
 
 import json
 from dataclasses import dataclass
@@ -32,7 +32,6 @@ class LLMClient(Protocol):
         effort: str,
         max_tokens: int,
         prompt_version: str,
-        use_fallback: bool,
     ) -> LLMResult:
         """One structured-output call. Never raises for provider failures; logs an AICallLog."""
         ...
@@ -44,17 +43,16 @@ def get_llm_client() -> LLMClient:
         from .fake import FakeLLMClient
 
         return FakeLLMClient.instance()
-    if backend == "anthropic":
-        return _anthropic_client(settings.ANTHROPIC_API_KEY)
+    if backend == "openrouter":
+        return _openrouter_client()
     raise ValueError(f"Unknown AI_BACKEND: {backend!r}")
 
 
-@lru_cache(maxsize=4)
-def _anthropic_client(api_key: str) -> LLMClient:
-    # One instance per key so the SDK's connection pool is reused across calls.
-    from .anthropic_client import AnthropicClient
+@lru_cache(maxsize=1)
+def _openrouter_client() -> LLMClient:
+    from .openrouter_client import OpenRouterApplicationClient
 
-    return AnthropicClient(api_key=api_key)
+    return OpenRouterApplicationClient()
 
 
 def strict_json_schema(schema_model: type[BaseModel]) -> dict[str, Any]:

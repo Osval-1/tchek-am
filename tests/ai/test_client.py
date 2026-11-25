@@ -20,14 +20,13 @@ class Outer(BaseModel):
 def _call(client, purpose="demo", schema_model=Outer, user_text="SECRET-INPUT 677123456"):
     return client.structured(
         purpose=purpose,
-        model="claude-haiku-5-5",
+        model="deepseek/deepseek-v4.1-flash-1017",
         system="SECRET-SYSTEM",
         user_content=[{"type": "text", "text": user_text}],
         schema_model=schema_model,
         effort="low",
         max_tokens=1024,
         prompt_version="v1",
-        use_fallback=False,
     )
 
 
@@ -74,13 +73,13 @@ def test_fake_is_the_test_backend_and_a_singleton():
     assert get_llm_client() is FakeLLMClient.instance()
 
 
-def test_anthropic_backend_selected_by_setting(settings):
-    settings.AI_BACKEND = "anthropic"
-    settings.ANTHROPIC_API_KEY = "test-key"
+def test_openrouter_backend_selected_by_setting(settings):
+    settings.AI_BACKEND = "openrouter"
+    settings.OPENROUTER_API_KEY = "test-key"
 
     client = get_llm_client()
 
-    assert type(client).__name__ == "AnthropicClient"
+    assert type(client).__name__ == "OpenRouterApplicationClient"
     assert get_llm_client() is client
 
 
@@ -103,7 +102,7 @@ def test_fake_returns_validated_model_and_logs_the_call(fake_llm):
     log = AICallLog.objects.get()
     assert (log.purpose, log.model, log.prompt_version, log.success, log.error) == (
         "demo",
-        "claude-haiku-5-5",
+        "deepseek/deepseek-v4.1-flash-1017",
         "v1",
         True,
         "",

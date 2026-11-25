@@ -1,4 +1,20 @@
-# Capability and privacy evidence — 24 November 2026
+# Capability and privacy evidence — updated 25 November 2026
+
+Owner update (ADR-026): every AI flow now uses OpenRouter. Direct Anthropic/Groq
+adapters, dependencies and keys are removed. The same DeepSeek model handles report
+extraction, group-photo classification and message flags; SerpAPI is retained.
+`openai/whisper-large-v3` through OpenRouter now implements report and agent speech
+transcription with documented ZDR/data-policy routing. Endpoint `only/order/ignore`
+are not enforced by STT and are not sent. Agent STT shares budgets/deadlines, has a
+persistent one-call cap and rejects invalid/overlong audio before inference. HTTP
+contract tests cover the adapters; no paid STT accuracy trial has been run. The paid
+results below are the original 24 November chat/image smoke, before this consolidation.
+
+Consolidation validation: the full network-free suite passed **1,815 tests**, with
+7 optional integrations skipped, one slow test deselected and one existing Sentry
+deprecation warning. Lint, formatting and migration consistency pass. Exact dependency
+sync removes the Anthropic SDK. No paid inference was invoked for this migration;
+the original experiment's $0.168546 conservative accounting remains unchanged.
 
 The owner authorized **$1** for an initial synthetic live test and confirmed ZDR is
 enabled on all AI models. DeepSeek chat and image-classification trials have now run
@@ -9,10 +25,10 @@ not a complete held-out release evaluation.
 | Role | Candidates/direction | Current selection | Evidence / remaining work |
 |---|---|---|---|
 | Chat | Owner selected `deepseek/deepseek-v4.1-flash-1017` | Synthetic live test via `together/us`; latest full run 33/33 | Pasted-message routing corrected with an authorized deterministic shortcut; broader held-out/language evidence remains open. |
-| Separate fast model | Removed from the agent | Not required | The chat model chooses tools; deterministic message rules remain available. Existing legacy AI_MODEL_FAST integrations are separate. |
+| Separate fast model | Removed globally | Not required | The chat model chooses tools; report/group/message tasks use the same DeepSeek model. Deterministic message rules remain available. |
 | Vision | Owner selected `deepseek/deepseek-v4.1-flash-1017` | Synthetic live test via `together/us`; latest full run 3/3 | Three generated screenshots cover FR/EN/PCM, phone/amount extraction and an embedded instruction. They do not establish real-world screenshot accuracy. |
 | MAI image generation | `microsoft/mai-image-2.7-flash` | Omitted by owner decision | Its image-only output does not meet the classifier's text-output contract. Image generation is outside this feature. |
-| STT | Owner-preferred OpenRouter endpoint; existing Groq remains separately configured for reports | Disabled for agent | Current STT docs explicitly say endpoint `only`, `order`, `ignore` restrictions are ignored. Equivalent approved-endpoint restrictions cannot be enforced by this adapter. |
+| STT | OpenRouter `openai/whisper-large-v3` | Implemented for reports and agent (ADR-026) | Enforces supported ZDR/data-policy routing, bounded transport and parsing. STT endpoint lists are unsupported. Real FR/EN/PCM accuracy evaluation remains. |
 | Photo reuse | Existing pHash/internal database path; existing SerpAPI pathway is separate | Internal-only in agent | Owned media does not authorize an external upload. Agent tools never schedule SerpAPI. No new shared-catalog copies are made by transient agent lookups. |
 
 Sources checked: [OpenRouter STT parameters](https://openrouter.ai/docs/guides/overview/multimodal/stt#request-parameters),
@@ -31,9 +47,10 @@ the account's ZDR-only/Safety Retention settings. The configured API key is avai
 its key-info response does not expose those privacy settings. The owner subsequently
 confirmed ZDR is enabled; that confirmation and the $1 authorization are recorded with
 the synthetic experiment, rather than presented as an independently fetched account audit.
-The dedicated STT adapter deliberately returns an empty `Transcript` before downloading
-or sending audio, even with credentials. Copying chat routing preferences into STT would
-silently weaken the endpoint policy.
+The initial trial disabled STT because endpoint lists were unsupported. The owner's
+25 November consolidation decision replaces that STT-only requirement with documented
+ZDR/data-policy routing. The implemented adapter returns an empty `Transcript` on
+provider/parse failure; it never silently falls back to another direct provider.
 
 Pinned installed contracts: LangChain **1.5.2**, LangGraph **1.2.24**,
 langchain-openrouter **0.3.0**, Langfuse SDK **3.15.0** (not attached as a callback),

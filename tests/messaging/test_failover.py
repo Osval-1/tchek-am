@@ -106,8 +106,7 @@ PROD_ENV = {
     "WASENDER_API_KEY": "p",
     "TERMS_URL": "https://t",
     "REPORTER_KEY_SECRET": "r",
-    "ANTHROPIC_API_KEY": "a",
-    "GROQ_API_KEY": "g",
+    "OPENROUTER_API_KEY": "a",
     "SERPAPI_API_KEY": "s",
 }
 

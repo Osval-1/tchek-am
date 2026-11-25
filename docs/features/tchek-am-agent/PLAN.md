@@ -32,7 +32,7 @@ Out of scope: moderator-facing AI, automatic report approval, group-listening ch
 
 **Question:** Do we keep Anthropic as the only provider (ADR-016), or route through OpenRouter?
 
-**Direction:** OpenRouter is the proposed access layer for the agent and vision, with an STT adapter evaluated separately. Keep the existing `LLMClient` and `SpeechToText` interfaces. Add `OpenRouterClient` for structured extraction and `OpenRouterSTT` for transcription; existing Anthropic/Groq implementations remain selectable only through explicit, privacy-reviewed configuration. Do not migrate existing production extraction, group classification or report transcription incidentally when enabling agent chat.
+**Owner update, 25 November 2026 (ADR-026):** OpenRouter now supplies every AI flow: agent chat/vision, report extraction, group-photo classification, message flags and transcription. Keep `LLMClient` and `SpeechToText` interfaces, with OpenRouter implementations and fakes only. Direct Anthropic/Groq adapters and keys are removed. Preserve SerpAPI independently.
 
 Use `langchain-openrouter` (`ChatOpenRouter`) for LangChain chat/vision calls. The current integration exposes provider preferences through `openrouter_provider`; verify serialization against the pinned package. Use the STT endpoint through its own adapter, not an assumed chat-model API. Set explicit connect/read/total deadlines, bounded retries and usage collection in every adapter. Avoid unsupported claims about another client's default timeouts.
 
@@ -41,7 +41,7 @@ Use `langchain-openrouter` (`ChatOpenRouter`) for LangChain chat/vision calls. T
 - Require account/application-key **ZDR only** settings, excluding Safety Retention across model groups. OpenRouter documents that request-level `zdr: true` can otherwise allow Safety Retention. A0 records and tests the effective configuration. [OpenRouter policy](https://openrouter.ai/docs/guides/features/zdr)
 - OpenRouter documents Google Vertex Safety Retention and a BYOK option requiring an actual ZDR agreement. **Gemini remains conditional.** Prefer an eligible alternative if necessary; existing internal-match/SerpAPI reuse checks remain available. Screenshot OCR/payment extraction stays off until an eligible vision model passes. No implied authorization to relax privacy. [Google/BYOK details](https://openrouter.ai/docs/guides/features/zdr#google-safety-retention)
 - Record OpenRouter's safety/legal exceptions in the access decision and notice. Inference ZDR does not govern tool backends or observability. Disable OpenRouter input/output logging, Broadcast exports and provider-hosted search/fetch plugins for this integration.
-- A0 must establish the STT endpoint's supported routing/privacy controls independently. Do not assume chat fields work on transcription requests. Block an STT candidate if equivalent restrictions cannot be enforced and verified. Every retry and fallback retains the approved policy; otherwise return a typed unavailable result.
+- STT uses its independently documented `provider.zdr: true` and `data_collection: deny` controls. Endpoint `only/order/ignore` preferences are unsupported for transcription and are not claimed. ADR-026 replaces the earlier STT endpoint-list requirement with this data-policy routing under owner-confirmed account ZDR. No hidden direct-provider fallback is permitted.
 
 **Role-specific capability matrix:**
 
@@ -53,11 +53,11 @@ Use `langchain-openrouter` (`ChatOpenRouter`) for LangChain chat/vision calls. T
 
 Each enabled role has an ordered model allow-list and an approved endpoint list. A role can use the same underlying model as another role if its own tests pass. Reject unsupported parameters rather than silently dropping them. Log served model, serving endpoint when available, request id, policy/prompt version, usage and outcome as metadata; refuse extraction on refusal, invalid output or truncation.
 
-Owner update, 24 November 2026: keep the conversational agent and use DeepSeek for both chat and image classification. Remove the separate fast-classification role and omit MAI image generation. The UI mention was a mistake; no new UI is requested. Existing `AI_MODEL_FAST` uses in legacy report/group/message integrations remain independently configured.
+Owner update, 24 November 2026: keep the conversational agent and use DeepSeek for both chat and image classification. Remove the separate fast-classification role and omit MAI image generation. The UI mention was a mistake; no new UI is requested. The 25 November consolidation also removes the separate fast model globally; every report/group/message classifier now uses `OPENROUTER_MODEL`.
 
-Import boundaries remain explicit: `ai/agent/models.py` and `ai/openrouter_client.py` own the LangChain/OpenRouter inference integration; `speech/openrouter.py` owns STT transport; existing provider adapters retain their existing exceptions. No SDK imports elsewhere. A source-scan test checks the enumerated allow-list, including `langchain_openrouter`, `langchain_openai`, `anthropic` and `openai`.
+Import boundaries remain explicit: `ai/agent/models.py` and `ai/openrouter_client.py` own the LangChain/OpenRouter inference integration; `speech/openrouter.py` owns STT transport; the removed direct-provider adapters have no exceptions. No SDK imports elsewhere. A source-scan test checks the enumerated allow-list, including `langchain_openrouter`, `langchain_openai`, `anthropic` and `openai`.
 
-**D1, models and initial serving endpoint selected; optional STT deferred.** Use `deepseek/deepseek-v4.1-flash-1017` for both chat and image classification. No separate fast role or MAI generation model is required. Initial synthetic trials use `together/us`; the owner confirmed account ZDR. A0 records endpoint/privacy capabilities and measurements for this selection. Existing legacy routes remain independently configured. A8 expands the same harness into release evaluation; optional voice remains disabled until its independent backend requirements are met.
+**D1, models and initial serving endpoint selected; OpenRouter STT implemented.** Use `deepseek/deepseek-v4.1-flash-1017` for both chat and image classification. No separate fast role or MAI generation model is required. Initial synthetic trials use `together/us`; the owner confirmed account ZDR. A0 records endpoint/privacy capabilities and measurements for this selection. Report/group/message paths now use the same DeepSeek model through OpenRouter. `SPEECH_MODEL=openai/whisper-large-v3` is the default transcription model. A8 expands the same harness into release evaluation, including real audio accuracy.
 
 ### ADR-024 (draft): Conversational agent architecture
 
@@ -213,7 +213,7 @@ The server assigns actor, language and permitted resource scope. Tool schemas ne
 | `start_report(evidence_refs)` | **Staged handoff.** Propose existing consent flow with only caller-owned evidence. Stop inner loop. | Handoff proposal id; code revalidates and starts the flow at atomic completion. |
 | `start_appeal(evidence_refs)` | **Staged handoff.** Existing appellant-number/eligibility checks remain mandatory. | Handoff proposal id, with no automatic submission or reputation change. |
 | `set_language(lang)` | **Staged preference write.** Allow-listed language; commit only if current. | Change proposal id and catalog confirmation. |
-| `read_image(media_ref, task)` | Owned-image inference using `AI_MODEL_VISION`; task is an enum of supported extraction questions. | Bounded typed observed fields/source refs/uncertainty. No image generation, verdict or open-ended advice. |
+| `read_image(media_ref, task)` | Owned-image inference using `AGENT_VISION_MODEL`; task is an enum of supported extraction questions. | Bounded typed observed fields/source refs/uncertainty. No image generation, verdict or open-ended advice. |
 
 Explicitly **not** tools: anything that writes reputation data, approves or rejects, reveals reporter identity or moderator data, fetches arbitrary URLs, runs code, or contacts a third party. Link safety, if wanted, is a separate reviewed lookup, not "fetch this URL".
 

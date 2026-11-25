@@ -157,7 +157,7 @@ Rules (decided 23 Nov 2026):
 1. ~~Tech stack~~: **DECIDED** Python/Django + Postgres/pgvector (22 Nov 2026).
 2. ~~Hosting~~: **DECIDED** Render (Frankfurt) + Cloudflare R2 EU (see architecture.md §2, §7).
 3. ~~Red threshold~~: **DECIDED** (see R2). ~~Decay window~~: **DECIDED** tiered decay (see R8). ~~How approved reports below the red threshold are shown~~: **DECIDED** 🟠 orange band (23 Nov 2026).
-4. ~~Voice notes~~: **DECIDED** in the MVP. ~~Speech-to-text provider~~: **DECIDED** Groq whisper-large-v3, with our own corpus built later (opt-in).
+4. ~~Voice notes~~: **DECIDED** in the MVP. ~~Speech-to-text provider~~: **DECIDED** OpenRouter openai/whisper-large-v3 (ADR-026), with our own corpus built later (opt-in).
 5. ~~External reverse-image search~~: **DECIDED** internal first, then web, via SerpAPI → Google Cloud Vision later (see F2).
 6. ~~Moderators~~: **DECIDED** the founder alone during the pilot. MVP tooling = Django admin + one custom review page. No roles or queue assignment yet.
 7. ~~WhatsApp channel~~: **DECIDED** WaSender + safeguards (see §7). **[ON HOLD]** Legal entity / company registration.

@@ -1,6 +1,6 @@
 """Evaluation runner: `uv run python -m evals.run extraction`.
 
-Calls the real model, so it runs only with AI_BACKEND=anthropic and an ANTHROPIC_API_KEY set;
+Calls the real model, so it runs only with AI_BACKEND=openrouter and an OPENROUTER_API_KEY set;
 otherwise it prints a skip message and exits 0. It is not part of the pytest run.
 """
 
@@ -86,8 +86,10 @@ def main(argv: list[str]) -> int:
     _setup_django()
     from django.conf import settings
 
-    if settings.AI_BACKEND != "anthropic" or settings.ANTHROPIC_API_KEY in _PLACEHOLDER_KEYS:
-        print("Skipping evals: set AI_BACKEND=anthropic and a real ANTHROPIC_API_KEY to run them.")
+    if settings.AI_BACKEND != "openrouter" or settings.OPENROUTER_API_KEY in _PLACEHOLDER_KEYS:
+        print(
+            "Skipping evals: set AI_BACKEND=openrouter and a real OPENROUTER_API_KEY to run them."
+        )
         return 0
     return SUITES[argv[0]]()
 

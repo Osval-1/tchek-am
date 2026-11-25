@@ -537,6 +537,45 @@ Export/authentication failures disable optional tracing and cannot retry inferen
 change replies. Flush is bounded. Real-user trace export stays off pending selective
 deletion/hold support, processor review and a production hosting decision (D3/D4).
 
+## ADR-026: OpenRouter for every AI flow; retain SerpAPI
+
+**Date:** 2026-11-25. **Status:** accepted by owner instruction. Supersedes the direct
+provider choices in ADR-008/016/019 and the limited migration scope in ADR-023.
+
+Use OpenRouter for conversational planning, screenshot/report extraction, group-photo
+classification, message warning flags and transcription. All chat/image tasks use
+`deepseek/deepseek-v4.1-flash-1017`; the former separate fast model is removed globally.
+Keep the existing Whisper Large V3 transcription family, now addressed as
+`openai/whisper-large-v3` through OpenRouter. Both are configurable model ids.
+One `OPENROUTER_API_KEY` supplies all AI calls. Delete the Anthropic SDK/adapter,
+direct Groq adapter, their keys/base URLs/model selectors and refusal-fallback option.
+Keep SerpAPI and its existing adapter, quotas, key and eligibility rules unchanged.
+WhatsApp, storage, database and application secrets remain necessary.
+
+Structured calls retain strict JSON validation, refusal/truncation handling, bounded
+timeouts, content-free audit and deterministic downstream confirmation/verdicts.
+Chat/image requests enforce approved endpoints, ZDR, no data collection, no provider
+fallbacks and no hosted plugins. Reports/groups retain their existing quotas; agent
+children additionally use the persistent shared reservation and invocation limits.
+
+OpenRouter transcription supports `provider.zdr` and `provider.data_collection`, but
+ignores endpoint `only`, `order` and `ignore` preferences. The prior endpoint-list
+requirement for STT is replaced by the documented ZDR-only data-policy route, relying
+on the owner's account-ZDR confirmation. No unsupported allow-list guarantee is made.
+The adapter is implemented instead of returning the previous unconditional unavailable
+result. Agent audio is owned, bounded by parsed audio-container duration/bytes and deadline, limited
+to one durable STT attempt, and cannot be replayed after uncertain billing. A low or
+missing-quality transcript cannot silently submit a report or adopt extracted evidence.
+
+Historical ADRs and archived paid-test receipts remain evidence of earlier choices.
+No provider credentials are revoked externally and no deployment occurs here. The
+privacy/processor inventory must reflect OpenRouter and its selected serving providers
+before real-user rollout. Contract tests use mock HTTP; real STT accuracy still needs
+a separate FR/EN/PCM audio evaluation.
+
+References: [STT parameters](https://openrouter.ai/docs/guides/overview/multimodal/stt),
+[transcription API](https://openrouter.ai/docs/api/api-reference/stt/create-transcription).
+
 ## Still open
 - **Company registration / legal entity:** on hold (see ADR-011).
 - **To confirm with the lawyer:** Law 2024/017 (cross-border transfer, group-listening data, sensitive ID data in Phase 2), defamation exposure of the band wording, and whether Cameroon's 2010 cybersecurity law can back the false-report warning.

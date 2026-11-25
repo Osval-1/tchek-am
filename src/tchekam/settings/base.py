@@ -163,8 +163,11 @@ EMBEDDER_BACKEND = env("EMBEDDER_BACKEND", default="openclip")
 AGENT_ENABLED = env.bool("AGENT_ENABLED", default=False)
 AGENT_LANGUAGES = env.list("AGENT_LANGUAGES", default=["fr", "en"])
 AGENT_VISION_ENABLED = env.bool("AGENT_VISION_ENABLED", default=False)
-AGENT_CHAT_MODEL = env("AGENT_CHAT_MODEL", default="deepseek/deepseek-v4.1-flash-1017")
-AGENT_VISION_MODEL = env("AGENT_VISION_MODEL", default="deepseek/deepseek-v4.1-flash-1017")
+OPENROUTER_MODEL = env("OPENROUTER_MODEL", default="deepseek/deepseek-v4.1-flash-1017")
+OPENROUTER_ENDPOINTS = env.list("OPENROUTER_ENDPOINTS", default=["together/us"])
+OPENROUTER_TIMEOUT_SECONDS = env.float("OPENROUTER_TIMEOUT_SECONDS", default=30)
+AGENT_CHAT_MODEL = env("AGENT_CHAT_MODEL", default=OPENROUTER_MODEL)
+AGENT_VISION_MODEL = env("AGENT_VISION_MODEL", default=OPENROUTER_MODEL)
 AGENT_ROLE_POLICIES = env.json("AGENT_ROLE_POLICIES", default={})
 OPENROUTER_API_KEY = env("OPENROUTER_API_KEY", default="")
 AGENT_MEMORY_KEY_VERSION = env("AGENT_MEMORY_KEY_VERSION", default="v1")
@@ -187,20 +190,13 @@ AGENT_TRACE_SYNTHETIC = env.bool("AGENT_TRACE_SYNTHETIC", default=False)
 LANGFUSE_PUBLIC_KEY = env("LANGFUSE_PUBLIC_KEY", default="")
 LANGFUSE_SECRET_KEY = env("LANGFUSE_SECRET_KEY", default="")
 
-# AI (Claude): "anthropic" (real API) or "fake" (tests, offline dev).
-AI_BACKEND = env("AI_BACKEND", default="anthropic")
-ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
-# Haiku for routing and classification; Sonnet only for screenshot extraction.
-AI_MODEL_FAST = env("AI_MODEL_FAST", default="claude-haiku-5-5")
-AI_MODEL_VISION = env("AI_MODEL_VISION", default="claude-sonnet-5-5")
-# Server-side refusal fallback on extraction calls (Sonnet only; Haiku has none).
-AI_REFUSAL_FALLBACK = env.bool("AI_REFUSAL_FALLBACK", default=True)
-
-# Speech-to-text: "groq" (Whisper API) or "fake" (tests, offline dev).
-SPEECH_BACKEND = env("SPEECH_BACKEND", default="groq")
-GROQ_API_KEY = env("GROQ_API_KEY", default="")
-GROQ_BASE_URL = env("GROQ_BASE_URL", default="https://api.groq.com/openai/v1")
-SPEECH_MODEL = env("SPEECH_MODEL", default="whisper-large-v3")
+# OpenRouter handles all extraction/classification and transcription calls.
+AI_BACKEND = env("AI_BACKEND", default="openrouter")
+SPEECH_BACKEND = env("SPEECH_BACKEND", default="openrouter")
+SPEECH_MODEL = env("SPEECH_MODEL", default="openai/whisper-large-v3")
+SPEECH_MAX_AUDIO_BYTES = env.int("SPEECH_MAX_AUDIO_BYTES", default=25 * 1024 * 1024)
+AGENT_MAX_AUDIO_SECONDS = env.int("AGENT_MAX_AUDIO_SECONDS", default=120)
+SPEECH_MAX_COST_MICROUSD = env.int("SPEECH_MAX_COST_MICROUSD", default=30000)
 
 # Web reverse image search: "serpapi" (Google Lens via SerpAPI) or "fake" (tests, offline dev).
 WEB_SEARCH_BACKEND = env("WEB_SEARCH_BACKEND", default="serpapi")

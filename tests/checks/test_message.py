@@ -270,7 +270,7 @@ def test_llm_input_is_delimited_and_injection_safe(bot, fake_llm):
 
     call = fake_llm.calls[0]
     assert call["purpose"] == "message_red_flags"
-    assert call["model"] == "claude-haiku-5-5"
+    assert call["model"] == "deepseek/deepseek-v4.1-flash-1017"
     block = call["user_content"][0]["text"]
     assert block.startswith("<message>") and block.endswith("</message>")
     assert block.count("</message>") == 1  # the attacker's closing tag is neutralised

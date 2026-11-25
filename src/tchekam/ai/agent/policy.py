@@ -78,6 +78,7 @@ def consume(ctx: RunContext, counter: str):
         "model_calls": settings.AGENT_MAX_MODEL_CALLS,
         "tool_calls": settings.AGENT_MAX_TOOL_CALLS,
         "vision_calls": 2,
+        "stt_calls": 1,
     }
     if counter not in limits:
         raise AgentDenied("unknown_counter")

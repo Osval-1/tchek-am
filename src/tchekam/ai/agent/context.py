@@ -30,6 +30,8 @@ class RunContext:
     model_calls: int = 0
     tool_calls: int = 0
     vision_calls: int = 0
+    stt_calls: int = 0
+    transcript: str = ""
     results: dict[str, TrustedResult] = field(default_factory=dict)
     staged: str = ""
     proposed_action: Any = None

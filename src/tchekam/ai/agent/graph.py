@@ -91,7 +91,7 @@ def build_graph(ctx: RunContext, *, services=None):
         run = auth(ctx)
         msg = get_message(run)
         if msg.kind == "audio":
-            # No STT endpoint has passed the separate A0 privacy gate yet.
+            # Audio is transcribed under the same run authority and spending ledger.
             return {"kind": "audio"}
         if msg.kind not in ("text", "image"):
             raise AgentDenied("unsupported")

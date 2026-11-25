@@ -74,7 +74,7 @@ Prod settings (`tchekam.settings.prod`, selected by `DJANGO_SETTINGS_MODULE`) re
 | `TERMS_URL` | Required. Privacy policy and terms page. |
 | `HELP_URL` | Optional. Empty omits the "More help" line. Add it in the dashboard if wanted. |
 | `REPORTER_KEY_SECRET` | Required. Set once, never rotate (see "Keys and secrets"). |
-| `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `SERPAPI_API_KEY` | Required. Claude, Whisper, Google Lens search. |
+| `OPENROUTER_API_KEY`, `SERPAPI_API_KEY` | Required. OpenRouter handles all AI and transcription; SerpAPI handles Google Lens search. |
 | `TRUSTED_PROXY_COUNT` | `1`, from the blueprint. |
 | `CHANNEL_SAFEGUARDS` | `true`, from the blueprint. Prod refuses to start with `false`. |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_TRACES_SAMPLE_RATE` | Sentry is off when `SENTRY_DSN` is empty. Release defaults to Render's commit hash. Tracing is off (`SENTRY_TRACES_SAMPLE_RATE` defaults to 0) because spans bypass the scrubber; do not enable it without reading "Monitoring". |
@@ -84,7 +84,7 @@ Prod settings (`tchekam.settings.prod`, selected by `DJANGO_SETTINGS_MODULE`) re
 
 Never set the `*_BACKEND` variables (`AI_BACKEND`, `SPEECH_BACKEND`, `WEB_SEARCH_BACKEND`, `MESSAGING_CHANNEL`, `OBJECT_STORE_BACKEND`) to `fake` or `memory` in production; their defaults are the real providers.
 
-Both services need the full list (the worker calls Claude, Whisper, SerpAPI and WaSender too). Because Render does not support `sync: false` in env groups, the secret list is repeated on web and worker; a test keeps the two identical. When you add a required variable to `settings/prod.py`, add it to `render.yaml` (a test fails otherwise) and to Render's dashboard.
+Both services need the full list (the worker calls OpenRouter, SerpAPI and WaSender too). Because Render does not support `sync: false` in env groups, the secret list is repeated on web and worker; a test keeps the two identical. When you add a required variable to `settings/prod.py`, add it to `render.yaml` (a test fails otherwise) and to Render's dashboard.
 
 ### Image embeddings (`ml` extra)  [DECIDE before the pilot]
 
@@ -201,7 +201,7 @@ Provider keys can be rotated without downtime. For each: create the new key at t
 
 - `WASENDER_API_KEY` / `WASENDER_BACKUP_API_KEY`: the key for the session. Verify with a message to the bot.
 - `WASENDER_WEBHOOK_SECRET` / `WASENDER_BACKUP_WEBHOOK_SECRET`: change it in Render and in the WaSender session's webhook settings at about the same time. The webhook accepts either configured secret, so rotate one session at a time; deliveries signed with the old secret are rejected (fail closed) and WaSender retries them.
-- `SERPAPI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`: swap and redeploy. A bad key shows up as failing checks (Sentry events and worker log lines), not as a startup error.
+- `SERPAPI_API_KEY`, `OPENROUTER_API_KEY`: swap and redeploy. A bad key shows up as failing checks (Sentry events and worker log lines), not as a startup error.
 - `S3_ACCESS_KEY` / `S3_SECRET_KEY`: create a second R2 token, swap, verify with the SSE check above, delete the old token.
 - `SENTRY_DSN`: swap and redeploy; the old DSN can be disabled in Sentry.
 
@@ -238,7 +238,7 @@ The implementation ledger is `docs/features/tchek-am-agent/ISSUES.md`; model/pro
 eligibility is recorded in `CAPABILITIES.md`. Installing migrations does not enable the
 agent. `AGENT_ENABLED=False`, no runtime `AgentControl` cohort and empty role policies
 keep current routing. Never treat the contract suite or missing-key run as live release
-evidence. Existing Anthropic/Groq/report/search configuration is independent.
+evidence. OpenRouter supplies all AI/transcription flows; SerpAPI remains independent (ADR-026).
 
 After acceptance, run inference in a separate process so it cannot exhaust messaging:
 
@@ -258,14 +258,18 @@ pending/running work and cancels pending deliveries; re-enabling cannot revive t
 Role policies, memory keys and spending limits must be configured. Missing keys,
 per-call bounds, positive daily/monthly budgets or endpoint lists deny paid calls.
 The redundant `approved` and `zdr_only_verified` booleans have been removed: the owner
-already selected DeepSeek and confirmed account ZDR. Every request still enforces
+already selected DeepSeek and confirmed account ZDR. Chat/image requests still enforce
 `zdr: true`, `data_collection: deny`, exact endpoint routing and no provider fallback.
 Use the tested role configuration in `.env.example`; model defaults select DeepSeek.
 Provider response ids and serving-provider metadata (when returned) are retained in
 the content-free AI call log. A provider display name is not an exact endpoint slug;
 the request's enforced endpoint list is recorded in synthetic receipts.
-OpenRouter STT is currently unavailable even with a key: do not substitute a less
-restricted backend during an outage. PCM is outside the default enabled language list.
+OpenRouter STT uses `SPEECH_MODEL=openai/whisper-large-v3` with ZDR/data-collection
+policy. STT ignores endpoint allow-lists; do not claim the chat endpoint list applies.
+Agent audio is capped at 120 seconds and one durable STT attempt per turn, sharing the
+run budget/deadline. Failed or uncertain calls never switch providers. Report audio
+retains its existing collection/confirmation flow. PCM is outside the default enabled
+agent language list; its STT language hint maps to English.
 
 For rollback, turn off Agent control first, stop the `agent` worker, and leave messaging
 and retention workers running. The reconciler/dispatcher recheck the switch. No schema

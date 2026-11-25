@@ -7,7 +7,7 @@
 - **Layout:** Django project package `tchekam` in `src/tchekam/`. Apps are `tchekam.<app>`. Settings are `tchekam.settings.{base,dev,test,prod}`, read from environment variables via `django-environ`. Tests go in `tests/<app>/` and use `pytest` + `pytest-django`.
 - **Tooling:** `uv` for dependencies, `ruff` for lint and format, Python 3.13. Run `uv run pytest` and `uv run ruff check .` before finishing.
 - **Database:** PostgreSQL 16 + pgvector (`docker compose up -d db`). Tests run against Postgres, not SQLite.
-- **External services** (WaSender, Claude, Groq, SerpAPI, R2) always sit behind an adapter interface, with a `Fake*` implementation used in tests. **No test makes network calls.**
+- **External services** (WaSender, OpenRouter, SerpAPI, R2) always sit behind an adapter interface, with a `Fake*` implementation used in tests. **No test makes network calls.**
 - **Background work** goes through `tchekam.core.tasks.enqueue(task_name, **kwargs)` (Issue 2). In test settings, tasks run eagerly and synchronously.
 - **Copy:** every user-facing string goes through the i18n catalogue (Issue 5), in fr, en and pcm (Pidgin). Never use "scammer", "fraud", "arnaqueur" or "escroc" in copy.
 - **Privacy:** never log message bodies, evidence or phone numbers at INFO level or above. Use `tchekam.core.redact()` in logs.
@@ -22,7 +22,7 @@
 - `pyproject.toml` (uv) with Django 5.x, django-environ, psycopg[binary], pgvector, procrastinate[django], httpx, pytest, pytest-django and ruff.
 - The `src/tchekam/` project with settings split into base/dev/test/prod, `urls.py`, `wsgi.py`/`asgi.py`, and a `core` app.
 - `docker-compose.yml` with `db` (image `pgvector/pgvector:pg16`) and `minio` (with a bucket-creation init step).
-- `.env.example` listing every variable used across the issues: `DATABASE_URL`, `SECRET_KEY`, `ALLOWED_HOSTS`, `WASENDER_API_KEY`, `WASENDER_WEBHOOK_SECRET`, `WASENDER_BACKUP_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `SERPAPI_API_KEY`, `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `SENTRY_DSN`, `FIELD_ENCRYPTION_KEY`.
+- `.env.example` listing every variable used across the issues: `DATABASE_URL`, `SECRET_KEY`, `ALLOWED_HOSTS`, `WASENDER_API_KEY`, `WASENDER_WEBHOOK_SECRET`, `WASENDER_BACKUP_API_KEY`, `OPENROUTER_API_KEY`, `SERPAPI_API_KEY`, `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `SENTRY_DSN`, `FIELD_ENCRYPTION_KEY`.
 - A health endpoint at `GET /healthz` that returns `{"status":"ok"}` and checks the database.
 - A migration that enables the `vector` extension.
 - A GitHub Actions workflow that runs ruff and pytest with a pgvector service container.
@@ -274,12 +274,12 @@
 
 ---
 
-## Issue 9: AI module: Claude client, prompt registry, evidence extraction, evals
+## Issue 9: AI module: OpenRouter client, prompt registry, evidence extraction, evals
 
 **Tier**: SENIOR
 **Description**: Create `tchekam.ai`.
-- **`LLMClient` interface** with `AnthropicClient` (official `anthropic` SDK) and `FakeLLMClient` (returns canned JSON keyed by purpose).
-- **Model settings:** `AI_MODEL_FAST="claude-haiku-5-5"` and `AI_MODEL_VISION="claude-sonnet-5-5"`.
+- **`LLMClient` interface** with `OpenRouterApplicationClient` (bounded httpx JSON transport) and `FakeLLMClient` (returns canned JSON keyed by purpose).
+- **Model settings:** `OPENROUTER_MODEL="deepseek/deepseek-v4.1-flash-1017"` for all chat/image purposes.
 - **Every call** logs to `AICallLog` (purpose, model, prompt_version, tokens_in, tokens_out, latency_ms, success, error). Never log content.
 - **Prompts:** versioned files in `ai/prompts/<purpose>/v1.md`, loaded by a registry. The system prompt is marked for prompt caching.
 - **`extract_evidence(images: list[bytes], transcript: str | None, lang) -> Extraction`**, a Pydantic model:
@@ -300,32 +300,32 @@
 - [ ] With `FakeLLMClient`, `extract_evidence` returns a validated `Extraction`. Invalid JSON triggers exactly one retry, then a partial result.
 - [ ] Extracted numbers are normalised to E.164 and invalid numbers are dropped (tested).
 - [ ] An `AICallLog` row is written per call and contains no prompt or response text.
-- [ ] The eval runner works against the fixtures, using the real client when `ANTHROPIC_API_KEY` is set and skipping otherwise.
-- [ ] No other module imports `anthropic` directly.
+- [ ] The eval runner works against the fixtures, using the real client when `OPENROUTER_API_KEY` is set and skipping otherwise.
+- [ ] Provider imports remain inside the enumerated OpenRouter adapters; removed direct-provider adapters cannot return.
 
-**Files likely affected**: `src/tchekam/ai/{client,anthropic_client,fake,models,prompts/,registry,extraction,schemas}.py`, `evals/*`, `tests/ai/*`
+**Files likely affected**: `src/tchekam/ai/{client,openrouter_client,fake,models,prompts/,registry,extraction,schemas}.py`, `evals/*`, `tests/ai/*`
 **Dependencies**: 2, 4
 
 ---
 
-## Issue 10: Speech-to-text adapter (Groq Whisper)
+## Issue 10: Speech-to-text adapter (OpenRouter Whisper)
 
 **Tier**: JUNIOR
 **Description**: Create `tchekam.speech`.
 - **`SpeechToText` interface:** `transcribe(audio: bytes, mimetype: str, language_hint: str | None) -> Transcript(text, language, confidence)`.
 - **Implementations:**
-  - `GroqWhisper`, using httpx `POST https://api.groq.com/openai/v1/audio/transcriptions` (multipart, model `whisper-large-v3`, `response_format=verbose_json`). Confidence is the mean of `exp(avg_logprob)` over segments, or 0.5 if absent.
+  - `OpenRouterSTT`, using httpx `POST https://openrouter.ai/api/v1/audio/transcriptions` (base64 JSON, model `openai/whisper-large-v3`, `response_format=verbose_json`, ZDR/data-collection policy). Confidence is the mean of `exp(avg_logprob)` over segments, or 0.5 if absent.
   - `FakeSpeechToText`.
-- **Input:** accept OGG/Opus as-is. Groq accepts ogg; set the filename extension from the mimetype.
+- **Input:** accept OGG/Opus as-is. OpenRouter accepts ogg; select the canonical input_audio format from the mimetype.
 - **Errors:** time out at 30 s. On failure, return `Transcript(text="", confidence=0.0)`. Never raise into the conversation flow.
 - **Logging:** record calls in `AICallLog`, with purpose `stt`.
 
 **Acceptance Criteria**:
-- [ ] An httpx MockTransport test checks the multipart request and parses a verbose_json fixture into text plus confidence.
+- [ ] An httpx MockTransport test checks the base64 JSON request and privacy policy and parses a verbose_json fixture into text plus confidence.
 - [ ] A timeout or 5xx response returns an empty transcript with confidence 0.
-- [ ] No module outside `speech` calls Groq.
+- [ ] Only the speech adapter calls the transcription endpoint.
 
-**Files likely affected**: `src/tchekam/speech/{base,groq,fake}.py`, `tests/speech/*`
+**Files likely affected**: `src/tchekam/speech/{base,openrouter,fake}.py`, `tests/speech/*`
 **Dependencies**: 9 (for `AICallLog`)
 
 ---
@@ -601,7 +601,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
   - **No active `PartnerGroup`:** call `channel.leave_group(jid)` (at most once per jid; record it in a `UnconsentedGroupLeave` log) and store nothing.
   - **Active group and image message:**
     1. Download the image.
-    2. Run a product classifier: `ai` purpose `is_product_photo`, Haiku with vision, returns `{is_product: bool}`, results cached per sha256.
+    2. Run a product classifier: `ai` purpose `is_product_photo`, DeepSeek with vision, returns `{is_product: bool}`, results cached per sha256.
     3. If it's a product, `imaging.ingest` with a sighting (context=group, phone_number=poster, group); otherwise discard the bytes immediately.
   - **Text, audio and anything else:** ignored and **never stored**. `InboundEvent.raw` for group events must be stored with `messageBody` and `message` stripped before saving (adjust the webhook: redact group payloads before persisting).
 - **Opt-out:** a private message `STOP GROUP` (any case, also `STOP GROUPE`) deletes all of the sender's group sightings (and orphaned Images whose only sightings were these, including thumbnails), adds the number to a `GroupOptOut` table, and confirms. Future group images from opted-out numbers are discarded before download.
@@ -628,7 +628,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
 - Router policy `DATA_PROTECTION_COMMANDS` (`group_opt_out`) runs before onboarding and also for blocked users. Blocked users get nothing for any other message.
 - LID-only and non-Cameroonian posters are discarded before download. This is a scope cut against PRD F8 ("every product photo"), recorded here.
 - `is_product_photo` verdicts are cached for 30 days per sha256 in the shared cache.
-- Photos of group members, who mostly never used the bot, are sent to Anthropic for classification. The privacy notice and the legal review must name this.
+- Photos of group members, who mostly never used the bot, are sent through OpenRouter to its serving provider for classification. The privacy notice and the legal review must name this.
 
 **Follow-ups (tracked):**
 - (b) A bot re-added to a group after its first leave stays in silently. Handle the WaSender group-join and participant events, or periodically leave jids that have no PartnerGroup, so the ADR-012 promise holds.
@@ -650,7 +650,7 @@ If the user picks "2. Scam evidence", start the report flow with this image as i
   - a payee name that differs from the seller;
   - refusal of cash on delivery or of meeting;
   - a price phrase with an amount far below `settings.PRICE_HINTS` (a small dict of common items, optional).
-- **LLM:** `ai` purpose `message_red_flags` (Haiku, prompt v1) returns `flags[{code, explanation}]` from a fixed code list.
+- **LLM:** `ai` purpose `message_red_flags` (DeepSeek, prompt v1) returns `flags[{code, explanation}]` from a fixed code list.
 - **Reply:** merge and deduplicate the flags, then reply with up to 5 flags, each with a one-line explanation in the user's language, and **never a verdict**. Close with "Red flags don't prove anything. Prefer cash on delivery." If the text contains numbers, also append the number-check summary (band line only) for up to 2 numbers.
 - **Fallback:** if the LLM fails, reply with the rule flags only.
 

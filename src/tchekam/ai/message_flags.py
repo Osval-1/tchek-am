@@ -39,14 +39,13 @@ def llm_flag_codes(text: str, allowed: tuple[str, ...]) -> list[str] | None:
     body = _CLOSING_TAG.sub("< /message>", text[:MAX_CHARS])
     result = get_llm_client().structured(
         purpose=PURPOSE,
-        model=settings.AI_MODEL_FAST,
+        model=settings.OPENROUTER_MODEL,
         system=system,
         user_content=[{"type": "text", "text": f"<message>\n{body}\n</message>"}],
         schema_model=RedFlagResult,
         effort=EFFORT,
         max_tokens=MAX_TOKENS,
         prompt_version=version,
-        use_fallback=False,  # Haiku has no refusal fallback (ADR-016)
     )
     if not result.ok or not isinstance(result.data, RedFlagResult):
         return None

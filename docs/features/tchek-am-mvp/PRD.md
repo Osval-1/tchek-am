@@ -23,7 +23,7 @@ Those platforms also have gaps we can fill: none publishes an appeal process or 
 
 Nothing reaches the public without human review. We never call anyone a "scammer", and reports lose weight over time.
 
-Channel: WaSender for the pilot, behind an adapter so we can move to Meta's official Cloud API. Stack: Django + Postgres/pgvector on Render (Frankfurt), Claude for extraction and classification, Groq Whisper for voice notes, SerpAPI for web image search.
+Channel: WaSender for the pilot, behind an adapter so we can move to Meta's official Cloud API. Stack: Django + Postgres/pgvector on Render (Frankfurt), DeepSeek through OpenRouter for extraction and classification, OpenRouter Whisper Large V3 for voice notes, SerpAPI for web image search.
 
 ## User Stories
 **Buyer**
@@ -145,7 +145,7 @@ Channel: WaSender for the pilot, behind an adapter so we can move to Meta's offi
   - `identifiers`
   - `checks`
   - `reports`
-  - `ai`: Claude client, versioned prompts, structured JSON output, evals
+  - `ai`: OpenRouter client, versioned prompts, structured JSON output, evals
   - `speech`: the `SpeechToText` adapter with Groq
   - `imaging`: sha256, pHash, CLIP/pgvector, and the `WebImageSearch` adapter with SerpAPI
   - `moderation`
@@ -153,8 +153,8 @@ Channel: WaSender for the pilot, behind an adapter so we can move to Meta's offi
   - `retention`
 - **Domain model:** `User`, `Conversation`, `InboundEvent`, `PhoneNumber`, `AccountName`, `Image` (vector(512)), `ImageSighting`, `PartnerGroup`, `Report`, `Evidence` (kind includes `voice`, with transcript), `ReportSubject`, `ReportLink`, `ModerationDecision`, `Appeal`, `AuditLog` (append-only), `CheckLog`, `AICallLog`. Records need legal-hold flags. Bands are computed, and cached with time-based expiry.
 - **AI:**
-  - Haiku 5.5 for routing and message red flags.
-  - Sonnet 5.5 vision for screenshot extraction, with a strict JSON schema: numbers, account names, amounts, transaction IDs, dates, operator, product, summary, tamper observations.
+  - DeepSeek V4.1 Flash through OpenRouter for routing and message red flags.
+  - The same DeepSeek model for screenshot extraction, with a strict JSON schema: numbers, account names, amounts, transaction IDs, dates, operator, product, summary, tamper observations.
   - Prompt caching on system prompts. `AICallLog` tracks cost.
   - Evals: 30–50 FR/EN/Pidgin fixtures.
 - **Security:**

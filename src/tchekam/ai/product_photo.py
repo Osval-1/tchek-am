@@ -26,7 +26,8 @@ _USER_TEXT = "Classify this photo. Return is_product."
 
 
 def _cache_key(sha256: str, version: str) -> str:
-    return f"ai:{PURPOSE}:{version}:{sha256}"
+    # Model migrations must not reuse classifications from the removed provider.
+    return f"ai:{PURPOSE}:{settings.OPENROUTER_MODEL}:{version}:{sha256}"
 
 
 def is_product_photo(data: bytes) -> bool | None:
@@ -47,14 +48,13 @@ def is_product_photo(data: bytes) -> bool | None:
     for _attempt in range(2):  # one retry, and only for output that failed validation
         result = client.structured(
             purpose=PURPOSE,
-            model=settings.AI_MODEL_FAST,
+            model=settings.OPENROUTER_MODEL,
             system=system,
             user_content=[block, {"type": "text", "text": _USER_TEXT}],
             schema_model=ProductPhoto,
             effort=EFFORT,
             max_tokens=MAX_TOKENS,
             prompt_version=version,
-            use_fallback=False,  # Haiku has no server-side fallback
         )
         if result.ok:
             verdict = result.data.is_product

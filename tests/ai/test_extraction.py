@@ -64,35 +64,25 @@ def test_success_returns_a_validated_extraction(fake_llm):
 
 
 def test_request_uses_vision_model_effort_and_cached_prompt(fake_llm, settings):
-    settings.AI_MODEL_VISION = "claude-sonnet-5-5"
+    settings.OPENROUTER_MODEL = "deepseek/deepseek-v4.1-flash-1017"
     fake_llm.responses[PURPOSE] = [payload()]
 
     extract(transcript="il a dit 690000000", story="je voulais un phone", lang="en")
 
     [call] = fake_llm.calls
-    assert call["model"] == "claude-sonnet-5-5"
+    assert call["model"] == "deepseek/deepseek-v4.1-flash-1017"
     assert call["effort"] == "medium"
     assert call["max_tokens"] == 4096
     assert call["prompt_version"] == "v1"
-    assert call["use_fallback"] is True
     assert call["schema_model"] is Extraction
     content = call["user_content"]
-    assert [b["type"] for b in content] == ["image", "image", "text"]
-    assert content[0]["source"]["media_type"] == "image/png"
-    assert base64.b64decode(content[0]["source"]["data"]) == IMAGES[0][0]
+    assert [b["type"] for b in content] == ["image_url", "image_url", "text"]
+    assert image_parts(content[0])[0] == "image/png"
+    assert base64.b64decode(image_parts(content[0])[1]) == IMAGES[0][0]
     text = content[-1]["text"]
     assert "English" in text and "il a dit 690000000" in text and "je voulais un phone" in text
     # Volatile values stay out of the cached system prompt.
     assert "il a dit" not in call["system"]
-
-
-def test_fallback_follows_setting(fake_llm, settings):
-    settings.AI_REFUSAL_FALLBACK = False
-    fake_llm.responses[PURPOSE] = [payload()]
-
-    extract()
-
-    assert fake_llm.calls[0]["use_fallback"] is False
 
 
 def test_invalid_json_is_retried_exactly_once_then_succeeds(fake_llm):
@@ -200,11 +190,16 @@ def encoded(fmt: str, mode="RGB", size=(8, 8), color="white") -> bytes:
     return buf.getvalue()
 
 
+def image_parts(block):
+    header, data = block["image_url"]["url"].split(",", 1)
+    return header.removeprefix("data:").removesuffix(";base64"), data
+
+
 def sent_images(fake_llm) -> list[tuple[str, Image.Image]]:
     return [
-        (b["source"]["media_type"], Image.open(io.BytesIO(base64.b64decode(b["source"]["data"]))))
+        (image_parts(b)[0], Image.open(io.BytesIO(base64.b64decode(image_parts(b)[1]))))
         for b in fake_llm.calls[0]["user_content"]
-        if b["type"] == "image"
+        if b["type"] == "image_url"
     ]
 
 
@@ -226,10 +221,10 @@ def test_media_type_comes_from_the_bytes_not_the_label(fake_llm):
 
     extract(images=images)
 
-    content = [b for b in fake_llm.calls[0]["user_content"] if b["type"] == "image"]
-    assert [b["source"]["media_type"] for b in content] == ["image/jpeg", "image/webp", "image/png"]
+    content = [b for b in fake_llm.calls[0]["user_content"] if b["type"] == "image_url"]
+    assert [image_parts(b)[0] for b in content] == ["image/jpeg", "image/webp", "image/png"]
     # Native formats under the size limit are sent byte for byte.
-    assert [base64.b64decode(b["source"]["data"]) for b in content] == [jpeg, webp, png_bytes]
+    assert [base64.b64decode(image_parts(b)[1]) for b in content] == [jpeg, webp, png_bytes]
 
 
 @pytest.mark.parametrize(
@@ -274,7 +269,7 @@ def test_images_beyond_the_cap_are_not_sent(fake_llm):
     result = extract(images=images)
 
     content = fake_llm.calls[0]["user_content"]
-    assert sum(b["type"] == "image" for b in content) == MAX_IMAGES
+    assert sum(b["type"] == "image_url" for b in content) == MAX_IMAGES
     assert result.evidence_kinds == ["chat"] * MAX_IMAGES + ["other", "other"]
 
 
@@ -289,8 +284,8 @@ def test_large_images_are_downscaled(fake_llm, monkeypatch):
     extract(images=[(big, "image/png")])
 
     block = fake_llm.calls[0]["user_content"][0]
-    assert block["source"]["media_type"] == "image/jpeg"
-    shrunk = Image.open(io.BytesIO(base64.b64decode(block["source"]["data"])))
+    assert image_parts(block)[0] == "image/jpeg"
+    shrunk = Image.open(io.BytesIO(base64.b64decode(image_parts(block)[1])))
     assert max(shrunk.size) == 1568
 
 
@@ -336,8 +331,8 @@ def test_decompression_bombs_are_skipped_without_raising(fake_llm, bomb):
     result = extract(images=images)
 
     content = fake_llm.calls[0]["user_content"]
-    assert [b["type"] for b in content] == ["image", "text"]
-    assert base64.b64decode(content[0]["source"]["data"]) == images[1][0]
+    assert [b["type"] for b in content] == ["image_url", "text"]
+    assert base64.b64decode(image_parts(content[0])[1]) == images[1][0]
     assert result.evidence_kinds == ["other", "chat"]
 
 
@@ -435,4 +430,4 @@ def test_tall_screenshots_within_the_limit_are_sent_unchanged(fake_llm):
     extract(images=[(tall, "image/jpeg")])
 
     block = fake_llm.calls[0]["user_content"][0]
-    assert base64.b64decode(block["source"]["data"]) == tall
+    assert base64.b64decode(image_parts(block)[1]) == tall

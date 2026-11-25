@@ -15,8 +15,7 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("WASENDER_API_KEY", "wk")
     monkeypatch.setenv("TERMS_URL", "https://example.com/terms")
     monkeypatch.setenv("REPORTER_KEY_SECRET", "rk" * 32)
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "ak-test")
-    monkeypatch.setenv("GROQ_API_KEY", "gk-test")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "ak-test")
     monkeypatch.setenv("SERPAPI_API_KEY", "sk-test")
     # The dev environment has no open_clip, which prod now refuses when the backend is openclip.
     monkeypatch.setenv("EMBEDDER_BACKEND", "fake")
@@ -87,8 +86,7 @@ def test_prod_requires_allowed_hosts(monkeypatch):
         "WASENDER_API_KEY",
         "TERMS_URL",
         "REPORTER_KEY_SECRET",
-        "ANTHROPIC_API_KEY",
-        "GROQ_API_KEY",
+        "OPENROUTER_API_KEY",
         "SERPAPI_API_KEY",
     ],
 )

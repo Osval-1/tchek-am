@@ -7,14 +7,46 @@ from .schemas import AgentDenied, ImageObservation, ModelUnavailable
 
 
 def transcribe_owned_audio(ctx):
+    import io
+    import math
+
+    import mutagen
+
+    from tchekam.messaging.channel import get_channel
+    from tchekam.speech.base import get_speech_to_text
+
     from .execution import owned_message
 
     msg = owned_message(authorize(ctx))
     if msg.kind != "audio":
         raise ModelUnavailable("source_type")
-    # A0 found STT endpoint allow-lists unsupported. Do not even download media for
-    # an ineligible role, or silently reuse the separately configured report backend.
-    raise ModelUnavailable("endpoint_allowlist_unsupported")
+    if ctx.stt_calls:
+        raise AgentDenied("call_limit")  # recovery must not repeat a possibly billed operation
+    if settings.SPEECH_BACKEND == "openrouter":
+        if not settings.OPENROUTER_API_KEY:
+            raise ModelUnavailable("stt_unavailable")
+        backend = get_speech_to_text(context=ctx)
+    elif settings.SPEECH_BACKEND == "fake":
+        backend = get_speech_to_text()
+    else:
+        raise ModelUnavailable("stt_unavailable")
+    data, mime = get_channel().download_media(msg)
+    authorize(ctx)
+    if not data or len(data) > settings.SPEECH_MAX_AUDIO_BYTES:
+        raise AgentDenied("audio_size")
+    try:
+        audio = mutagen.File(io.BytesIO(data))
+        seconds = float(audio.info.length)
+        if not math.isfinite(seconds) or not 0 < seconds <= settings.AGENT_MAX_AUDIO_SECONDS:
+            raise ValueError("duration")
+    except Exception:
+        raise AgentDenied("audio_duration") from None
+    heard = backend.transcribe(data, mime, ctx.lang)
+    authorize(ctx)
+    if not heard.text or len(heard.text) > 4000 or heard.confidence < 0.5:
+        raise ModelUnavailable("stt_unavailable")
+    ctx.transcript = heard.text
+    return heard.text
 
 
 def image_bytes(ctx):
@@ -91,7 +123,6 @@ def read_owned_image(ctx, task):
         effort="low",
         max_tokens=512,
         prompt_version="agent-vision-v1",
-        use_fallback=False,
     )
     if not result.ok:
         raise ModelUnavailable("vision_unavailable")

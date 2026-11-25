@@ -8,7 +8,7 @@ from django.conf import settings
 
 @dataclass(frozen=True)
 class Transcript:
-    """`language` is the provider's own name (Groq says "french"), not our fr/en/pcm codes."""
+    """`language` is the provider's language name/code, not necessarily fr/en/pcm."""
 
     text: str = ""
     language: str = ""
@@ -23,19 +23,14 @@ class SpeechToText(Protocol):
         ...
 
 
-def get_speech_to_text() -> SpeechToText:
+def get_speech_to_text(*, context=None) -> SpeechToText:
     backend = settings.SPEECH_BACKEND
     if backend == "fake":
         from .fake import FakeSpeechToText
 
         return FakeSpeechToText.instance()
-    if backend == "groq":
-        # Lazy so this factory stays the only place that names the provider adapter.
-        from .groq import GroqWhisper
-
-        return GroqWhisper()
     if backend == "openrouter":
         from .openrouter import OpenRouterSTT
 
-        return OpenRouterSTT()
+        return OpenRouterSTT(context=context)
     raise ValueError(f"Unknown SPEECH_BACKEND: {backend!r}")

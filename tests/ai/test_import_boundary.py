@@ -4,32 +4,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src" / "tchekam"
-ALLOWED = SRC / "ai" / "anthropic_client.py"
-FORBIDDEN = re.compile(r"^\s*(?:import\s+anthropic\b|from\s+anthropic\b)", re.MULTILINE)
 
 
-def test_only_the_anthropic_adapter_imports_the_sdk():
-    scanned = [*SRC.rglob("*.py"), *(ROOT / "evals").rglob("*.py")]
-    offenders = [
-        str(path.relative_to(ROOT))
-        for path in scanned
-        if path != ALLOWED and FORBIDDEN.search(path.read_text(encoding="utf-8"))
-    ]
-
-    assert offenders == []
-
-
-def test_boundary_check_scans_real_files():
-    # Guard against a path bug making the test above pass vacuously.
-    assert FORBIDDEN.search(ALLOWED.read_text(encoding="utf-8"))
+def test_removed_provider_adapters_cannot_return():
+    assert not (SRC / "ai/anthropic_client.py").exists()
+    assert not (SRC / "speech/groq.py").exists()
+    for path in SRC.rglob("*.py"):
+        source = path.read_text(encoding="utf-8")
+        assert not re.search(r"ANTHROPIC_API_KEY|GROQ_API_KEY|import anthropic", source), path
 
 
 def test_provider_sdks_stay_inside_enumerated_adapters():
     allowed = {
-        "ai/anthropic_client.py",
         "ai/openrouter_client.py",
         "ai/agent/models.py",
-        "speech/groq.py",
         "speech/openrouter.py",
     }
     forbidden = {"anthropic", "openai", "openrouter", "langchain_openrouter", "langchain_openai"}

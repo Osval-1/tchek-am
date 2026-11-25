@@ -100,8 +100,7 @@ jobs:
           WASENDER_WEBHOOK_SECRET=x
           TERMS_URL=http://localhost/terms
           REPORTER_KEY_SECRET=ci-only-reporter-key
-          ANTHROPIC_API_KEY=x
-          GROQ_API_KEY=x
+          OPENROUTER_API_KEY=x
           SERPAPI_API_KEY=x
           EMBEDDER_BACKEND=fake
           EOF

@@ -36,6 +36,25 @@ def nearest_rank_p95(values):
     return ordered[ceil(0.95 * len(ordered)) - 1]
 
 
+def validate_cases(cases):
+    """Reject malformed or ambiguous development fixtures before invoking a model."""
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("Dataset must contain at least one case")
+    ids = set()
+    for case in cases:
+        if not isinstance(case, dict):
+            raise ValueError("Each case must be an object")
+        case_id = case.get("id")
+        if not isinstance(case_id, str) or not case_id.strip() or case_id in ids:
+            raise ValueError("Case ids must be nonempty and unique")
+        ids.add(case_id)
+        if case.get("lang") not in {"fr", "en", "pcm"}:
+            raise ValueError(f"Invalid language for {case_id}")
+        if not isinstance(case.get("input"), str) or not case["input"].strip():
+            raise ValueError(f"Missing input for {case_id}")
+    return cases
+
+
 def implementation_digest():
     """Include new source files: git diff alone omits this uncommitted feature."""
     paths = [*ROOT.joinpath("src").rglob("*.py"), *ROOT.joinpath("evals/agent").glob("*.py")]
@@ -100,12 +119,15 @@ def live(budget_usd, *, case_limit=None, collection="dialogue", case_ids=None):
             cases = vision_cases()
         else:
             cases = json.loads(CASES.read_text(encoding="utf-8"))
+        validate_cases(cases)
         if case_ids:
             cases = [case for case in cases if case["id"] in case_ids]
             if {case["id"] for case in cases} != set(case_ids):
                 raise ValueError("Unknown case id")
         if case_limit is not None:
             cases = cases[:case_limit]
+        if not cases:
+            raise ValueError("No cases selected")
         for i, case in enumerate(cases, 1):
             user = BotUser.objects.create(wa_phone=f"+2376900{i:05d}", language=case["lang"])
             Conversation.objects.create(user=user, agent_sequence=1)
@@ -313,6 +335,9 @@ def main():
                 report["task_success"] >= GATES["task_success_min"]
                 and report["p95_seconds"] <= GATES["p95_seconds_max"]
                 and report["mean_reserved_usd"] <= GATES["mean_reserved_usd_max"]
+            )
+            report["safety_gate_status"] = (
+                "incomplete: independent safety observations not captured"
             )
             code = 0 if report["smoke_passed"] else 1
         except Exception as exc:

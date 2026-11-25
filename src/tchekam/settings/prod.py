@@ -32,10 +32,8 @@ TERMS_URL = env("TERMS_URL")
 HELP_URL = env("HELP_URL", default="")
 # Pseudonymous reporter identity; a placeholder would make keys guessable from phone numbers.
 REPORTER_KEY_SECRET = env("REPORTER_KEY_SECRET")
-# Extraction and classification need Claude; an empty key would fail every call silently.
-ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
-# Voice notes need Whisper; an empty key would turn every transcription into a silent failure.
-GROQ_API_KEY = env("GROQ_API_KEY")
+# One provider key for chat, classification, evidence extraction and transcription.
+OPENROUTER_API_KEY = env("OPENROUTER_API_KEY")
 # The default image has no torch; fail at startup, not at the first photo check after a deploy.
 if EMBEDDER_BACKEND == "openclip" and importlib.util.find_spec("open_clip") is None:  # noqa: F405
     raise ImproperlyConfigured(

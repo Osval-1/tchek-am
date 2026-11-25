@@ -110,11 +110,12 @@ def execute(ctx: RunContext, name: str, arguments: dict) -> str:
             from tchekam.checks.redflags import rule_flags
 
             msg = owned_message(run)
-            if msg.kind != "text" or not msg.text:
+            text = ctx.transcript if msg.kind == "audio" else msg.text
+            if msg.kind not in ("text", "audio") or not text:
                 raise AgentDenied("source_type")
-            if previous or _log_if_allowed(user, msg.text):
+            if previous or _log_if_allowed(user, text):
                 # Rules-only mode deliberately avoids an unbudgeted legacy LLM child call.
-                texts = [build_reply(msg.text, rule_flags(msg.text), ctx.lang)]
+                texts = [build_reply(text, rule_flags(text), ctx.lang)]
             else:
                 texts = [t("check.limit_reached", ctx.lang)]
         elif name == "explain_scam_pattern":

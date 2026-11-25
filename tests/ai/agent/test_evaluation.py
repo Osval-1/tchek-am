@@ -1,9 +1,23 @@
 import io
 
 import pytest
-from evals.agent.run import nearest_rank_p95
+from evals.agent.run import nearest_rank_p95, validate_cases
 from evals.agent.vision_fixtures import cases, render
 from PIL import Image
+
+
+@pytest.mark.parametrize(
+    "cases",
+    [
+        [],
+        [{"id": "x", "lang": "fr", "input": "hello"}] * 2,
+        [{"id": "x", "lang": "unknown", "input": "hello"}],
+        [{"id": "x", "lang": "fr", "input": " "}],
+    ],
+)
+def test_invalid_datasets_are_rejected(cases):
+    with pytest.raises(ValueError):
+        validate_cases(cases)
 
 
 def test_p95_includes_tail_in_small_media_collections():

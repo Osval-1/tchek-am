@@ -92,7 +92,7 @@ def test_happy_path_collects_extracts_and_reaches_confirm(bot, fake_llm, fake_sp
     assert payee.account_name.provider == "momo"
 
     call = fake_llm.calls[0]
-    assert sum(1 for b in call["user_content"] if b["type"] == "image") == 2
+    assert sum(1 for b in call["user_content"] if b["type"] == "image_url") == 2
     prompt = call["user_content"][-1]["text"]
     assert TRANSCRIPT in prompt and STORY in prompt
 
@@ -404,7 +404,7 @@ def test_resending_after_a_drop_then_done_reaches_extraction(bot, fake_llm):
 
     assert texts[0] == t("report.analysing", EN)
     assert report.evidence.count() == 1
-    assert sum(1 for b in fake_llm.calls[0]["user_content"] if b["type"] == "image") == 1
+    assert sum(1 for b in fake_llm.calls[0]["user_content"] if b["type"] == "image_url") == 1
     assert bot.conversation.flow == "report_confirm"
 
 

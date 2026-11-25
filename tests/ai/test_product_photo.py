@@ -27,19 +27,18 @@ def _clear_cache():
     cache.clear()
 
 
-def test_product_photo_uses_haiku_with_the_image_and_a_strict_schema(fake_llm, settings):
+def test_product_photo_uses_selected_model_with_the_image_and_a_strict_schema(fake_llm, settings):
     fake_llm.responses[PURPOSE] = ['{"is_product": true}']
 
     assert is_product_photo(png()) is True
 
     call = fake_llm.calls[0]
     assert call["purpose"] == "is_product_photo"
-    assert call["model"] == settings.AI_MODEL_FAST
+    assert call["model"] == settings.OPENROUTER_MODEL
     assert call["schema_model"] is ProductPhoto
     assert call["prompt_version"] == "v1"
-    assert call["use_fallback"] is False
-    assert call["user_content"][0]["type"] == "image"
-    assert call["user_content"][0]["source"]["media_type"] == "image/png"
+    assert call["user_content"][0]["type"] == "image_url"
+    assert call["user_content"][0]["image_url"]["url"].startswith("data:image/png;base64,")
     log = AICallLog.objects.get()
     assert (log.purpose, log.success) == ("is_product_photo", True)
 
@@ -67,6 +66,14 @@ def test_different_images_are_classified_separately(fake_llm):
 
     assert is_product_photo(png("white")) is True
     assert is_product_photo(png("black")) is False
+
+
+def test_model_change_does_not_reuse_the_previous_classification(fake_llm, settings):
+    fake_llm.responses[PURPOSE] = ['{"is_product": false}', '{"is_product": true}']
+    assert is_product_photo(png()) is False
+    settings.OPENROUTER_MODEL = "synthetic/replacement"
+    assert is_product_photo(png()) is True
+    assert len(fake_llm.calls) == 2
 
 
 @pytest.mark.parametrize("failure", [RuntimeError("down"), FakeRefusal("x"), None])

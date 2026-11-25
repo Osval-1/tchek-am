@@ -273,7 +273,6 @@ def test_structured_vision_records_usage_and_closes_owned_transport(
         effort="low",
         max_tokens=512,
         prompt_version="agent-vision-v1",
-        use_fallback=False,
     )
     if served_model == "synthetic/vision":
         assert result.ok and result.data.numbers == ["+237677123456"]
@@ -288,8 +287,8 @@ def test_structured_vision_records_usage_and_closes_owned_transport(
     assert all(model._owned_http_client is None for model in ctx.model_resources)
 
 
-def test_openrouter_stt_fails_closed_without_transport(settings):
+def test_openrouter_stt_fails_closed_without_a_key(settings):
     settings.SPEECH_BACKEND = "openrouter"
+    settings.OPENROUTER_API_KEY = ""
     stt = get_speech_to_text()
-    assert stt.unavailable_reason == "endpoint_allowlist_unsupported"
     assert not stt.transcribe(b"fake secret audio", "audio/ogg").text

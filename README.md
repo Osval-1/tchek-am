@@ -10,7 +10,15 @@
 - [Glossary](docs/CONTEXT.md): domain terms
 - [Idea brief](docs/idea-brief.md): market research and original ideas
 
-Status: pre-MVP, planning.
+Status: local implementation; production rollout remains off.
+
+AI calls use **OpenRouter**: DeepSeek V4.1 Flash for chat, classification and screenshot
+extraction, and `openai/whisper-large-v3` for transcription. Set `OPENROUTER_API_KEY`
+for both. **SerpAPI** remains the reverse-image search service with `SERPAPI_API_KEY`.
+Direct Anthropic/Groq adapters and credentials are no longer used (ADR-026).
+For offline development, set `AI_BACKEND=fake`, `SPEECH_BACKEND=fake`,
+`MESSAGING_CHANNEL=fake`, `WEB_SEARCH_BACKEND=fake` and `EMBEDDER_BACKEND=fake`.
+Pytest selects fake backends automatically; provider contract tests use mock HTTP.
 
 
 ## Getting started

@@ -19,8 +19,8 @@
 | DB | **PostgreSQL 16 + pgvector** | Relational data, vectors, full-text search and the job queue in one place |
 | Queue / worker | **Procrastinate** (Postgres-backed) or Celery + Redis | Procrastinate means one less piece of infrastructure. Switch to Celery if throughput needs it. |
 | Object storage | S3-compatible (Cloudflare R2 / Backblaze B2 / MinIO locally) | Evidence and product images, with server-side encryption |
-| LLM / vision | **Claude** (Haiku 5.5 for message classification and routing, Sonnet 5.5 for screenshot extraction and summaries) | Strong multilingual French/English, handles Pidgin well, and vision does OCR and extraction in one call, so there is no separate OCR pipeline in the MVP |
-| Speech-to-text (voice notes) | **Groq `whisper-large-v3`** (decided 23 Nov 2026), behind a `SpeechToText` adapter. Claude doesn't take audio input. | Cheap and fast. Pidgin accuracy is expected to be weak, which is acceptable because the user confirms the extracted fields and the moderator can play the audio. **Longer term:** build our own labelled corpus from voice notes paired with the user-corrected fields (opt-in consent only) and fine-tune a model for Pidgin and Camfranglais. WhatsApp voice notes arrive as OGG/Opus. |
+| LLM / vision | **OpenRouter: DeepSeek V4.1 Flash** for chat, message/group classification and report/screenshot extraction | One provider key and the same model across text/image tasks; strict structured output and code-owned verdicts |
+| Speech-to-text (voice notes) | **OpenRouter `openai/whisper-large-v3`**, behind `SpeechToText` (ADR-026) | Uses the same OpenRouter key and documented STT ZDR routing. WhatsApp OGG/Opus is supported; users confirm fields and moderators can play evidence. Agent audio is bounded to 120 seconds. |
 | Image similarity | `imagehash` (pHash/dHash) + **open_clip** ViT-B/32 or SigLIP embeddings (CPU is fine at MVP volume) | pHash catches near-identical copies; embeddings catch crops, edits and the same product shot differently |
 | Phone numbers | `phonenumbers` (libphonenumber) + our own CM prefix-to-operator table | Normalise every number to E.164 |
 | WhatsApp | **WaSender** (unofficial, WhatsApp Web-style session) for the pilot, behind a `MessagingChannel` interface. A `MetaCloudApiChannel` implementation comes later. | No company or verification needed, and it can join groups. It can be banned without warning, so the adapter, backup number and switch-over rule are required (PRD §7). Text-only menus. |
@@ -47,7 +47,7 @@
                               │  LLM extraction & classification · linking/clustering · notifications │
                               └───────┬───────────────────────┬──────────────────────┬───────────────┘
                                       ▼                       ▼                      ▼
-                              PostgreSQL + pgvector     Object storage (R2)     Claude API
+                              PostgreSQL + pgvector     Object storage (R2)     OpenRouter API
 ```
 
 ## 4. Modules (Django apps)
@@ -60,7 +60,7 @@
 | `identifiers` | Canonical entities: `PhoneNumber`, `AccountName` (MoMo/OM holder name, normalised), `Image`. Normalisation and operator lookup. |
 | `checks` | F1–F3 logic. Builds the response from approved data only. Logs every check (a demand signal and a priority input). |
 | `reports` | Report, Evidence, ExtractedField (AI vs confirmed), ReportLink. The report flow's business logic. |
-| `ai` | Prompt templates, Claude client, structured-output schemas, the cost/latency log and evaluation fixtures. Every AI call goes through this module. |
+| `ai` | Prompt templates, OpenRouter client, structured-output schemas, the cost/latency log and evaluation fixtures. Every AI call goes through this module. |
 | `speech` | Voice-note download, transcription through a provider adapter, transcript stored on the Evidence row |
 | `imaging` | pHash + embedding computation, the near-duplicate search, an optional external reverse-search adapter |
 | `moderation` | Queues, decisions, appeals, audit log, moderator roles |
@@ -109,7 +109,7 @@ The **status band** is computed on demand (and cached) from `ReportSubject` → 
 Download the media (the URL expires quickly, so do this right away) → sha256 (exact match) → pHash (Hamming distance ≤ 8 means near-duplicate) → CLIP embedding (pgvector cosine search, top-k, threshold tuned on a labelled set) → combine the results → store an `ImageSighting` → reply. Then a web reverse search runs as a separate job (`WebImageSearch` adapter: `SerpApiLensProvider` now, `GoogleVisionWebDetectionProvider` later), subject to per-user and monthly caps, and sends a follow-up message only if it finds matches.
 
 ### 6.3 Report extraction
-Each evidence image goes to Claude vision with a **strict JSON schema**: `{phone_numbers[], account_names[], amounts[], transaction_ids[], dates[], operator, product, summary, language, tamper_observations[]}`. Results are merged across all images, and numbers and names are normalised. Then the tamper heuristics run: font/time inconsistencies flagged by the model, plus EXIF/recompression checks and duplicate evidence already used in another report. The summary is shown back to the user to confirm. On submit, the linker finds related reports by shared number, name, image or text similarity.
+Report evidence images go together to DeepSeek vision through OpenRouter with a **strict JSON schema**: `{phone_numbers[], account_names[], amounts[], transaction_ids[], dates[], operator, product, summary, language, tamper_observations[]}`. Fields are cross-checked across all images, and numbers and names are normalised. Then the tamper heuristics run: font/time inconsistencies flagged by the model, plus EXIF/recompression checks and duplicate evidence already used in another report. The summary is shown back to the user to confirm. On submit, the linker finds related reports by shared number, name, image or text similarity.
 
 ### 6.4 Moderation
 Django admin with a custom **review page**: evidence gallery, AI fields next to editable confirmed fields, linked reports, and one-click decisions. Approving writes `ModerationDecision`, invalidates the band cache for each subject, and enqueues a notification to the reporter (a free-form message inside 24 h, an approved template otherwise).
@@ -120,7 +120,7 @@ Django admin with a custom **review page**: evidence gallery, AI fields next to 
 - `User.wa_id` and phone numbers of *reporters* are never included in check responses. Masked account names only.
 - Moderators get 2FA, roles (moderator / admin) and least privilege.
 - Secrets live in environment variables or the platform's secret store. We rotate the WhatsApp system-user token.
-- **Hosting region (decided):** EU (Frankfurt). Data leaves Cameroon whatever we host, through WaSender and WhatsApp/Meta, Anthropic (Claude), Groq and SerpAPI, so the lawyer must approve cross-border transfer under Law 2024/017 regardless. Every foreign processor is listed in the privacy notice. We move to in-country hosting only if the law requires the database itself to stay in Cameroon.
+- **Hosting region (decided):** EU (Frankfurt). Data leaves Cameroon whatever we host, through WaSender and WhatsApp/Meta, OpenRouter/its serving providers and SerpAPI, so the lawyer must approve cross-border transfer under Law 2024/017 regardless. Every foreign processor is listed in the privacy notice. We move to in-country hosting only if the law requires the database itself to stay in Cameroon.
 - **Retention (decided 23 Nov 2026)**, enforced by a nightly `retention` job; every deletion is written to the audit log:
   | Data | Kept for |
   |---|---|
@@ -138,7 +138,7 @@ Django admin with a custom **review page**: evidence gallery, AI fields next to 
 ## 8. AI cost and quality controls
 
 - All prompts are versioned in `ai/prompts/`. We keep a labelled fixture set (start with 30–50 real or anonymised scam screenshots and messages in FR/EN/Pidgin) and an `evals` command that scores extraction accuracy and red-flag precision.
-- Haiku for routing and message red flags, Sonnet only for vision extraction. Prompt caching for the long system prompts.
+- DeepSeek V4.1 Flash through OpenRouter for all chat/image tasks; Whisper Large V3 through OpenRouter for speech. No direct AI-provider keys or automatic provider fallback. SerpAPI remains the external image-search service.
 - Per-user rate limits (e.g. 30 checks/day, 3 reports/day) cap both cost and abuse.
 
 ## 9. Repository layout (proposed)

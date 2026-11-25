@@ -32,7 +32,7 @@ COPY src ./src
 RUN SECRET_KEY=build-only ALLOWED_HOSTS=localhost DATABASE_URL=postgres://u:p@localhost/x \
     S3_ENDPOINT_URL=http://localhost S3_BUCKET=x S3_ACCESS_KEY=x S3_SECRET_KEY=x \
     WASENDER_API_KEY=x WASENDER_WEBHOOK_SECRET=x TERMS_URL=http://localhost REPORTER_KEY_SECRET=x \
-    ANTHROPIC_API_KEY=x GROQ_API_KEY=x SERPAPI_API_KEY=x EMBEDDER_BACKEND=fake \
+    OPENROUTER_API_KEY=x SERPAPI_API_KEY=x EMBEDDER_BACKEND=fake \
     python src/manage.py collectstatic --noinput
 USER app
 EXPOSE 8000

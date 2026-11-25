@@ -77,9 +77,7 @@ services:
         sync: false
       - key: REPORTER_KEY_SECRET
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: GROQ_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: SERPAPI_API_KEY
         sync: false
@@ -125,9 +123,7 @@ services:
         sync: false
       - key: REPORTER_KEY_SECRET
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: GROQ_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: SERPAPI_API_KEY
         sync: false
